@@ -1,0 +1,3142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DONA RITA EMBALAGENS (SAC) - Sistema de Não Conformidades</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #3C1053;
+            --primary-light: #5B2A86;
+            --primary-dark: #1A0033;
+            --primary-glow: #8B5CF6;
+            --accent: #7C3AED;
+            --accent-light: #A78BFA;
+            --accent-dark: #3C1053;
+            --success: #3C1053;
+            --success-light: #7C3AED;
+            --danger: #D32F2F;
+            --warning: #F57C00;
+            --bg: #1A0033;
+            --bg-gradient: linear-gradient(135deg, #1A0033 0%, #2D0A4E 30%, #3C1053 70%, #1A0033 100%);
+            --card-bg: #FFFFFF;
+            --text: #1A1A2E;
+            --text-light: #5C5C8A;
+            --border: #C5CAE9;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+            --shadow-hover: 0 16px 45px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 30px rgba(124, 58, 237, 0.4);
+            --radius: 20px;
+            --radius-sm: 12px;
+            --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow-x: hidden; }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            background-image: var(--bg-gradient);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle at 30% 30%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(167, 139, 250, 0.1) 0%, transparent 60%);
+            animation: bgFloat 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(1%, -1%) rotate(1deg); }
+            50% { transform: translate(-1%, 0.5%) rotate(-1deg); }
+            75% { transform: translate(0.5%, 1%) rotate(0.5deg); }
+        }
+        .header {
+            background: linear-gradient(135deg, #1A0033 0%, #3C1053 30%, #5B2A86 55%, #7C3AED 100%);
+            background-size: 300% 300%;
+            animation: headerGradient 8s ease infinite;
+            color: #fff;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+            border-bottom: 3px solid var(--accent);
+            flex-shrink: 0;
+        }
+        @keyframes headerGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .header-inner {
+            max-width: 100%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .logo-area { display: flex; align-items: center; gap: 16px; }
+        .logo-icon {
+            width: 52px; height: 52px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px;
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            animation: iconPulse 3s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        @keyframes iconPulse {
+            0%, 100% { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); }
+            50% { box-shadow: 0 8px 40px rgba(124, 58, 237, 0.6); }
+        }
+        .logo-text h1 {
+            font-size: 1.4rem; font-weight: 800;
+            letter-spacing: 0.6px; line-height: 1.2;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+        }
+        .logo-text .sac-badge {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+            color: #fff;
+            padding: 3px 12px;
+            border-radius: 30px;
+            font-size: 0.62rem; font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-top: 2px;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.5);
+            animation: badgeGlow 2.5s ease-in-out infinite;
+        }
+        @keyframes badgeGlow {
+            0%, 100% { box-shadow: 0 4px 15px rgba(124, 58, 237, 0.5); }
+            50% { box-shadow: 0 4px 30px rgba(124, 58, 237, 0.8); }
+        }
+        .header-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+        .stat-badge {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(14px);
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 12px;
+            padding: 10px 18px;
+            text-align: center;
+            min-width: 80px;
+            transition: var(--transition);
+            cursor: default;
+        }
+        .stat-badge:hover {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .stat-badge .stat-value {
+            font-size: 1.4rem; font-weight: 800; color: #fff;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .stat-badge .stat-label {
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.85; font-weight: 600; color: #fff;
+        }
+        .stat-badge.stat-alerta {
+            background: linear-gradient(135deg, #B71C1C 0%, #F44336 100%);
+            border-color: rgba(255, 255, 255, 0.4);
+            animation: statAlertaPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes statAlertaPulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7),
+                            0 10px 30px rgba(0, 0, 0, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(244, 67, 54, 0),
+                            0 10px 30px rgba(0, 0, 0, 0.3);
+            }
+        }
+        .container {
+            max-width: 100%; width: 100%;
+            margin: 0; padding: 24px;
+            position: relative; z-index: 1;
+            flex: 1; display: flex; flex-direction: column;
+            min-height: 0;
+        }
+        .tabs-nav {
+            display: flex; gap: 8px;
+            margin-bottom: 24px; flex-wrap: wrap;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            padding: 10px;
+            border-radius: var(--radius);
+            box-shadow: var(--glass-shadow);
+            border: 1px solid var(--glass-border);
+            flex-shrink: 0;
+        }
+        .tab-btn {
+            padding: 12px 22px;
+            border: none;
+            background: transparent;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem; font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            color: rgba(255, 255, 255, 0.75);
+            display: flex; align-items: center; gap: 8px;
+            font-family: var(--font);
+            position: relative; overflow: hidden; white-space: nowrap;
+        }
+        .tab-btn::before {
+            content: '';
+            position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        .tab-btn:hover::before { left: 100%; }
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff; transform: translateY(-1px);
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%);
+            color: #fff;
+            box-shadow: 0 8px 25px rgba(60, 16, 83, 0.6);
+            transform: translateY(-2px);
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute; bottom: -2px; left: 50%;
+            transform: translateX(-50%);
+            width: 40px; height: 3px;
+            background: var(--accent);
+            border-radius: 4px;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeInUp 0.45s ease;
+            flex: 1; min-height: 0; overflow-y: auto;
+        }
+        .tab-content.active { display: block; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px; margin-bottom: 20px;
+            transition: var(--transition);
+            border: 1px solid rgba(197, 202, 233, 0.5);
+            position: relative; overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 4px;
+            background: linear-gradient(90deg, #3C1053 0%, #7C3AED 50%, #A78BFA 100%);
+            background-size: 200% 100%;
+            animation: cardBorderGlow 4s ease infinite;
+        }
+        @keyframes cardBorderGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+        .card-title {
+            font-size: 1.2rem; font-weight: 800;
+            color: #3C1053; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px;
+            padding-bottom: 14px;
+            border-bottom: 2px solid #E8EAF6;
+        }
+        .card-title .icon {
+            font-size: 1.4rem;
+            animation: titleIconBounce 2s ease-in-out infinite;
+        }
+        @keyframes titleIconBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group.half-width { grid-column: span 1; }
+        .form-label {
+            font-weight: 700; font-size: 0.8rem;
+            color: var(--text); letter-spacing: 0.3px;
+        }
+        .form-label .required { color: var(--danger); font-weight: 800; }
+        .form-input, .form-select, .form-textarea {
+            padding: 11px 15px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-family: var(--font);
+            transition: var(--transition);
+            background: #FAFAFE;
+            color: var(--text);
+            outline: none; width: 100%;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: #5B2A86; background: #fff;
+            box-shadow: 0 0 0 5px rgba(91, 42, 134, 0.15), 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        .form-textarea { min-height: 75px; resize: vertical; }
+        .form-input:hover, .form-select:hover, .form-textarea:hover { border-color: #A78BFA; }
+        .form-input:disabled, .form-input[readonly] {
+            background: #E8EAF6; cursor: not-allowed; opacity: 0.7;
+        }
+        .radio-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .radio-label {
+            display: flex; align-items: center; gap: 8px;
+            cursor: pointer;
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            font-weight: 600; font-size: 0.85rem;
+            background: #FAFAFE;
+            user-select: none; position: relative; overflow: hidden;
+        }
+        .radio-label::before {
+            content: '';
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(60, 16, 83, 0.06) 0%, rgba(124, 58, 237, 0.04) 100%);
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .radio-label:hover::before { opacity: 1; }
+        .radio-label:hover {
+            border-color: #5B2A86;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(60, 16, 83, 0.15);
+        }
+        .radio-label input[type="radio"] {
+            appearance: none;
+            width: 18px; height: 18px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer; position: relative;
+            transition: var(--transition);
+            flex-shrink: 0; z-index: 1;
+        }
+        .radio-label input[type="radio"]:checked {
+            border-color: #3C1053; background: #3C1053;
+            box-shadow: inset 0 0 0 4px #fff, 0 0 12px rgba(60, 16, 83, 0.4);
+        }
+        .radio-label:has(input:checked) {
+            border-color: #3C1053; background: #F3E5F5;
+            color: #3C1053; font-weight: 700;
+            box-shadow: 0 4px 20px rgba(60, 16, 83, 0.2);
+        }
+        .btn {
+            padding: 11px 22px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem; font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.4px;
+            display: inline-flex; align-items: center; gap: 6px;
+            font-family: var(--font);
+            text-decoration: none; user-select: none;
+            position: relative; overflow: hidden; white-space: nowrap;
+        }
+        .btn::before {
+            content: '';
+            position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn:hover::before { left: 100%; }
+        .btn-primary {
+            background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(60, 16, 83, 0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(60, 16, 83, 0.55);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #3C1053 0%, #7C3AED 100%);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(60, 16, 83, 0.4);
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(60, 16, 83, 0.55);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #C62828 0%, var(--danger) 100%);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(211, 47, 47, 0.35);
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(211, 47, 47, 0.5);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #E65100 0%, var(--warning) 100%);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(245, 124, 0, 0.35);
+        }
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(245, 124, 0, 0.5);
+        }
+        .btn-outline {
+            background: transparent;
+            color: #3C1053;
+            border: 2px solid #3C1053;
+        }
+        .btn-outline:hover {
+            background: #3C1053; color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(60, 16, 83, 0.35);
+        }
+        .btn-pdf {
+            background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+        }
+        .btn-pdf:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(124, 58, 237, 0.65);
+        }
+        .btn-sm { padding: 7px 13px; font-size: 0.75rem; border-radius: 7px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+        .filter-bar {
+            display: flex; gap: 14px;
+            flex-wrap: wrap; align-items: flex-end;
+            padding: 16px 0;
+            border-bottom: 2px solid #E8EAF6;
+            margin-bottom: 18px;
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
+        .filter-label {
+            font-size: 0.68rem; font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-light);
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            max-height: calc(100vh - 300px);
+            overflow-y: auto;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.03);
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            min-width: 1350px;
+        }
+        .table thead {
+            background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%);
+            color: #fff;
+            position: sticky; top: 0; z-index: 10;
+        }
+        .table th {
+            padding: 13px 15px;
+            text-align: left;
+            font-weight: 700; font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            white-space: nowrap;
+            border-bottom: 3px solid #7C3AED;
+        }
+        .table td {
+            padding: 11px 15px;
+            border-bottom: 1px solid #E8EAF6;
+            vertical-align: middle;
+            color: var(--text);
+            transition: background 0.25s ease;
+        }
+        .table tbody tr { transition: var(--transition); }
+        .table tbody tr:hover {
+            background: #F0F0F8;
+            transform: scale(1.001);
+        }
+        .table tbody tr:nth-child(even) { background: #FAFAFE; }
+        .table tbody tr:nth-child(even):hover { background: #E8EAF6; }
+        .table tbody tr.row-alerta {
+            background: linear-gradient(90deg, rgba(255, 235, 235, 0.85) 0%, rgba(255, 248, 245, 0.6) 100%) !important;
+            border-left: 5px solid #E53935;
+            position: relative;
+        }
+        .table tbody tr.row-alerta:hover {
+            background: linear-gradient(90deg, rgba(255, 220, 220, 0.95) 0%, rgba(255, 240, 235, 0.8) 100%) !important;
+        }
+        .table tbody tr.row-alerta td:first-child {
+            position: relative;
+        }
+        .table tbody tr.row-alerta td:first-child::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 5px; height: 100%;
+            background: #E53935;
+            animation: alertaPulseBorder 1.6s ease-in-out infinite;
+        }
+        @keyframes alertaPulseBorder {
+            0%, 100% { background: #E53935; box-shadow: 0 0 12px rgba(229, 57, 53, 0.6); }
+            50% { background: #FF6B6B; box-shadow: 0 0 20px rgba(229, 57, 53, 1); }
+        }
+        .badge-prazo {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: linear-gradient(135deg, #E53935 0%, #FF6B6B 100%);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.62rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            margin-left: 6px;
+            box-shadow: 0 3px 10px rgba(229, 57, 53, 0.4);
+            animation: badgePrazoPulse 1.8s ease-in-out infinite;
+            position: relative;
+        }
+        .badge-prazo::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: -3px;
+            width: 6px; height: 6px;
+            background: #E53935;
+            border-radius: 50%;
+            transform: translateY(-50%);
+            animation: dotPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes badgePrazoPulse {
+            0%, 100% { box-shadow: 0 3px 10px rgba(229, 57, 53, 0.4); transform: scale(1); }
+            50% { box-shadow: 0 6px 18px rgba(229, 57, 53, 0.8); transform: scale(1.04); }
+        }
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; transform: translateY(-50%) scale(1); }
+            50% { opacity: 0.4; transform: translateY(-50%) scale(1.5); }
+        }
+        .badge-prazo .icon {
+            font-size: 0.75rem;
+            animation: clockTick 2s ease-in-out infinite;
+            display: inline-block;
+        }
+        @keyframes clockTick {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-12deg); }
+            75% { transform: rotate(12deg); }
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 13px;
+            border-radius: 25px;
+            font-size: 0.66rem; font-weight: 800;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transition: var(--transition);
+        }
+        .badge:hover { transform: scale(1.04); }
+        .badge-concluido {
+            background: #F3E5F5; color: #3C1053;
+            border: 1.5px solid #B39DDB;
+            box-shadow: 0 2px 8px rgba(60, 16, 83, 0.15);
+        }
+        .badge-aguardando {
+            background: #FFF8E1; color: #B8860B;
+            border: 1.5px solid #FFE082;
+            box-shadow: 0 2px 8px rgba(184, 134, 11, 0.15);
+        }
+        .badge-contabilizando {
+            background: #E3F2FD; color: #1A6B9E;
+            border: 1.5px solid #90CAF9;
+            box-shadow: 0 2px 8px rgba(26, 107, 158, 0.15);
+        }
+        .badge-reposicao {
+            background: #FBE9E7; color: #C0392B;
+            border: 1.5px solid #F5B7B1;
+            box-shadow: 0 2px 8px rgba(192, 57, 43, 0.15);
+        }
+        .badge-abertura {
+            background: #E3F2FD; color: #3C1053;
+            border: 1.5px solid #90CAF9;
+            box-shadow: 0 2px 8px rgba(60, 16, 83, 0.15);
+        }
+        .badge-liberacao {
+            background: #EDE7F6; color: #5B2A86;
+            border: 1.5px solid #B39DDB;
+            box-shadow: 0 2px 8px rgba(91, 42, 134, 0.15);
+        }
+        .badge-fiscal {
+            background: #E8F5E9; color: #2E7D32;
+            border: 1.5px solid #A5D6A7;
+            box-shadow: 0 2px 8px rgba(46, 125, 50, 0.15);
+        }
+        .badge-financeiro {
+            background: #E1F5FE; color: #0277BD;
+            border: 1.5px solid #81D4FA;
+            box-shadow: 0 2px 8px rgba(2, 119, 189, 0.15);
+        }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(10px);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000; animation: fadeIn 0.3s ease;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #fff;
+            border-radius: var(--radius);
+            max-width: 680px; width: 92%;
+            max-height: 85vh; overflow-y: auto;
+            padding: 28px;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5);
+            animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 3px solid transparent;
+            border-image: linear-gradient(135deg, #3C1053 0%, #7C3AED 100%) 1;
+        }
+        @keyframes modalSlideUp {
+            from { transform: translateY(60px) scale(0.9); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 14px;
+            border-bottom: 2px solid #E8EAF6;
+        }
+        .modal-header h3 { font-size: 1.15rem; color: #3C1053; font-weight: 800; }
+        .modal-close {
+            background: none; border: none;
+            font-size: 1.8rem; cursor: pointer;
+            color: var(--text-light);
+            transition: var(--transition);
+            line-height: 1; padding: 2px 8px; border-radius: 8px;
+        }
+        .modal-close:hover {
+            background: #FEE; color: var(--danger);
+            transform: rotate(90deg);
+        }
+        .modal-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .modal-detail-item { padding: 8px 0; border-bottom: 1px solid #F0F0F8; }
+        .modal-detail-item .label {
+            font-size: 0.64rem; font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-light);
+            margin-bottom: 2px;
+        }
+        .modal-detail-item .value {
+            font-size: 0.9rem; font-weight: 600;
+            color: var(--text);
+            word-break: break-word;
+        }
+        .modal-detail-item.full { grid-column: 1 / -1; }
+        .timeline {
+            margin: 8px 0; padding-left: 20px;
+            border-left: 3px solid var(--border);
+        }
+        .timeline-item { margin-bottom: 12px; position: relative; }
+        .timeline-item::before {
+            content: '';
+            position: absolute; left: -26px; top: 5px;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: #5B2A86;
+            border: 3px solid #fff;
+            box-shadow: 0 0 0 3px #5B2A86, 0 0 15px rgba(91, 42, 134, 0.4);
+        }
+        .timeline-item .etapa { font-weight: 700; font-size: 0.85rem; }
+        .timeline-item .data { font-size: 0.7rem; color: var(--text-light); }
+        .alerta-prazo-box {
+            background: linear-gradient(135deg, #FFF3F3 0%, #FFEBEE 100%);
+            border: 2px solid #E53935;
+            border-left: 6px solid #E53935;
+            border-radius: var(--radius-sm);
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: relative;
+            overflow: hidden;
+            animation: alertaBoxPulse 2s ease-in-out infinite;
+            grid-column: 1 / -1;
+        }
+        @keyframes alertaBoxPulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(229, 57, 53, 0.25); }
+            50% { box-shadow: 0 8px 25px rgba(229, 57, 53, 0.5); }
+        }
+        .alerta-prazo-box .icon-alerta {
+            width: 46px; height: 46px;
+            background: linear-gradient(135deg, #E53935 0%, #FF6B6B 100%);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+            color: #fff;
+            flex-shrink: 0;
+            animation: iconAlertaShake 2.2s ease-in-out infinite;
+        }
+        @keyframes iconAlertaShake {
+            0%, 100% { transform: rotate(0deg); }
+            15% { transform: rotate(-15deg); }
+            30% { transform: rotate(15deg); }
+            45% { transform: rotate(-10deg); }
+            60% { transform: rotate(10deg); }
+            75% { transform: rotate(0deg); }
+        }
+        .alerta-prazo-box .texto-alerta {
+            flex: 1;
+            color: #8B0000;
+        }
+        .alerta-prazo-box .texto-alerta .titulo {
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+            color: #C62828;
+        }
+        .alerta-prazo-box .texto-alerta .descricao {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #B71C1C;
+            line-height: 1.4;
+        }
+        .alerta-prazo-box .texto-alerta .descricao strong {
+            font-weight: 800;
+            color: #E53935;
+            font-size: 0.95rem;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .chart-container {
+            background: #FAFAFE;
+            border-radius: var(--radius-sm);
+            padding: 18px;
+            border: 1.5px solid var(--border);
+            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+        .chart-container:hover {
+            border-color: #5B2A86;
+            box-shadow: 0 8px 25px rgba(60, 16, 83, 0.12);
+            transform: translateY(-2px);
+        }
+        .chart-container h3 {
+            font-size: 0.9rem; font-weight: 800;
+            color: #3C1053; margin-bottom: 12px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border-bottom: 1px solid #E8EAF6;
+            padding-bottom: 8px;
+        }
+        .chart-container canvas { max-height: 300px; max-width: 100%; }
+        .chart-container-full {
+            grid-column: 1 / -1;
+        }
+        .lista-atrasos-prorrogacao {
+            margin-top: 14px;
+            max-height: 260px;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #E8EAF6;
+            background: #fff;
+        }
+        .lista-atrasos-prorrogacao .lista-vazia {
+            padding: 14px;
+            text-align: center;
+            color: #5C5C8A;
+            font-size: 0.78rem;
+            font-style: italic;
+        }
+        .tabela-atrasos-prorrogacao {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.74rem;
+        }
+        .tabela-atrasos-prorrogacao thead {
+            background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%);
+            color: #fff;
+        }
+        .tabela-atrasos-prorrogacao th {
+            padding: 8px 8px;
+            text-align: left;
+            font-size: 0.6rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .tabela-atrasos-prorrogacao td {
+            padding: 7px 8px;
+            border-bottom: 1px solid #F0F0F8;
+            color: #1A1A2E;
+            vertical-align: middle;
+        }
+        .tabela-atrasos-prorrogacao tbody tr:nth-child(even) {
+            background: #FAFAFE;
+        }
+        .tabela-atrasos-prorrogacao tbody tr:hover {
+            background: #F0F0F8;
+        }
+        .tabela-atrasos-prorrogacao .val-atrasos {
+            color: #C62828;
+            font-weight: 800;
+        }
+        .tabela-atrasos-prorrogacao .val-prorrog {
+            color: #E65100;
+            font-weight: 800;
+        }
+        .tabela-atrasos-prorrogacao tfoot {
+            background: #F3E5F5;
+            color: #3C1053;
+            font-weight: 800;
+        }
+        .tabela-atrasos-prorrogacao tfoot td {
+            padding: 9px 8px;
+            border-top: 2px solid #B39DDB;
+            font-size: 0.72rem;
+        }
+        @media (max-width: 768px) {
+            .charts-grid { grid-template-columns: 1fr; }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+        .empty-state .icon {
+            font-size: 3.5rem;
+            margin-bottom: 14px;
+            opacity: 0.5;
+            animation: emptyFloat 3s ease-in-out infinite;
+        }
+        @keyframes emptyFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .empty-state h3 {
+            font-size: 1.1rem; color: var(--text);
+            margin-bottom: 6px; font-weight: 800;
+        }
+        .empty-state p { font-size: 0.82rem; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .toast {
+            position: fixed; bottom: 24px; right: 24px;
+            background: linear-gradient(135deg, #1A0033 0%, #3C1053 100%);
+            color: #fff;
+            padding: 15px 22px;
+            border-radius: var(--radius-sm);
+            font-weight: 700; font-size: 0.85rem;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            animation: toastSlideUp 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex; align-items: center; gap: 10px;
+            max-width: 380px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        @keyframes toastSlideUp {
+            from { transform: translateY(80px) scale(0.9); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .toast.success { background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%); }
+        .toast.error { background: linear-gradient(135deg, #B71C1C 0%, #D32F2F 100%); }
+        .toast.warning { background: linear-gradient(135deg, #E65100 0%, #F57C00 100%); }
+        .toast.alert-prazo { background: linear-gradient(135deg, #B71C1C 0%, #E53935 100%); }
+        @media (max-width: 768px) {
+            .header-inner { padding: 12px 14px; flex-direction: column; text-align: center; gap: 8px; }
+            .logo-area { flex-direction: column; gap: 6px; }
+            .logo-text h1 { font-size: 1.05rem; white-space: normal; }
+            .header-stats { gap: 6px; justify-content: center; }
+            .stat-badge { padding: 6px 10px; min-width: 60px; }
+            .stat-badge .stat-value { font-size: 1rem; }
+            .container { padding: 14px 10px; }
+            .card { padding: 16px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .form-group.half-width { grid-column: 1 / -1; }
+            .modal-detail-grid { grid-template-columns: 1fr; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .btn { padding: 9px 16px; font-size: 0.8rem; }
+            .tabs-nav { flex-direction: column; }
+            .tab-btn { justify-content: center; }
+        }
+        @media (max-width: 480px) {
+            .header-stats { display: none; }
+            .logo-text h1 { font-size: 0.9rem; }
+            .card-title { font-size: 0.95rem; }
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #5B2A86 0%, #3C1053 100%);
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #7C3AED 0%, #5B2A86 100%);
+        }
+        .loading-indicator {
+            display: inline-block;
+            width: 18px; height: 18px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s ease infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .global-loading {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(26, 0, 51, 0.85);
+            backdrop-filter: blur(6px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            flex-direction: column;
+            gap: 20px;
+            color: #fff;
+        }
+        .global-loading.active { display: flex; }
+        .global-loading .spinner {
+            width: 60px; height: 60px;
+            border: 5px solid rgba(167, 139, 250, 0.25);
+            border-top-color: #A78BFA;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        .global-loading .txt {
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="global-loading" id="globalLoading">
+        <div class="spinner"></div>
+        <div class="txt">Carregando dados do Firebase...</div>
+    </div>
+
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo-area">
+                <div class="logo-icon">📦</div>
+                <div class="logo-text">
+                    <h1>DONA RITA EMBALAGENS</h1>
+                    <span class="sac-badge">SAC</span>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-badge">
+                    <div class="stat-value" id="statTotal">0</div>
+                    <div class="stat-label">Registros</div>
+                </div>
+                <div class="stat-badge">
+                    <div class="stat-value" id="statPendentes">0</div>
+                    <div class="stat-label">Pendentes</div>
+                </div>
+                <div class="stat-badge">
+                    <div class="stat-value" id="statConcluidos">0</div>
+                    <div class="stat-label">Concluídos</div>
+                </div>
+                <div class="stat-badge stat-alerta" id="statAlertaBadge" title="Reclamações abertas há 10 dias ou mais" style="display: none;">
+                    <div class="stat-value" id="statEmAtraso">0</div>
+                    <div class="stat-label">⚠️ Em Atraso</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <div class="tabs-nav">
+            <button class="tab-btn active" data-tab="registro">📝 Registro</button>
+            <button class="tab-btn" data-tab="historico">📋 Histórico</button>
+            <button class="tab-btn" data-tab="dashboard">📊 Dashboard</button>
+        </div>
+
+        <!-- ===== ABA: REGISTRO ===== -->
+        <div class="tab-content active" id="tab-registro">
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">📝</span> Registrar Não Conformidade / Reclamação
+                </div>
+                <form id="formNaoConformidade" autocomplete="off">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nº Registro <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="numRegistro" placeholder="Digite o número manualmente" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Cliente <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="cliente" placeholder="Nome do cliente" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Data da Ocorrência <span class="required">*</span></label>
+                            <input type="date" class="form-input" id="dataOcorrencia" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Área Envolvida <span class="required">*</span></label>
+                            <select class="form-select" id="areaEnvolvida" required>
+                                <option value="">Selecione...</option>
+                                <option value="Produção">Produção</option>
+                                <option value="Qualidade">Qualidade</option>
+                                <option value="Logística">Logística</option>
+                                <option value="Expedição">Expedição</option>
+                                <option value="Comercial">Comercial</option>
+                                <option value="Compras">Compras</option>
+                                <option value="Manutenção">Manutenção</option>
+                                <option value="Administrativo">Administrativo</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Origem <span class="required">*</span></label>
+                            <div class="radio-group">
+                                <label class="radio-label">
+                                    <input type="radio" name="origem" value="Interno" checked>
+                                    🏭 Interno
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="origem" value="Externo">
+                                    🌐 Externo
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Causa Resumida <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="causaResumida" placeholder="Resumo da causa" required>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Causa do Problema (Completo) <span class="required">*</span></label>
+                            <textarea class="form-textarea" id="causaCompleta" placeholder="Descreva detalhadamente a causa do problema..." required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Código do Item</label>
+                            <input type="text" class="form-input" id="codItem" placeholder="Código do item">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Descrição do Produto</label>
+                            <input type="text" class="form-input" id="descricaoProduto" placeholder="Descrição do produto" list="listaDescricaoProdutos">
+                            <datalist id="listaDescricaoProdutos"></datalist>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Quantidade Reclamada</label>
+                            <input type="text" inputmode="numeric" class="form-input" id="valorNFD" placeholder="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Atrasos / Dias</label>
+                            <input type="text" inputmode="numeric" class="form-input" id="atrasosDias" placeholder="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Andamento <span class="required">*</span></label>
+                            <select class="form-select" id="andamento" required>
+                                <option value="Abertura da RNC" selected>🔓 Abertura da RNC</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Solução do Problema</label>
+                            <textarea class="form-textarea" id="solucaoProblema" placeholder="Descreva a solução aplicada ou proposta..." rows="3"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Nf / Nfd</label>
+                            <input type="text" class="form-input" id="nfNfd" placeholder="Valores" autocomplete="off">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Bonificação (R$)</label>
+                            <input type="text" inputmode="decimal" class="form-input" id="bonificacao" placeholder="0,00">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Prorrogação (dias)</label>
+                            <input type="text" inputmode="numeric" class="form-input" id="prorrogacao" placeholder="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Reemissão (dias)</label>
+                            <input type="text" inputmode="numeric" class="form-input" id="reemissao" placeholder="0">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <div class="btn-group" style="margin-top: 8px;">
+                                <button type="submit" class="btn btn-success" id="btnSalvar">
+                                    💾 Salvar Registro
+                                </button>
+                                <button type="button" class="btn btn-outline" id="btnLimpar">
+                                    🧹 Limpar Formulário
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== ABA: HISTÓRICO ===== -->
+        <div class="tab-content" id="tab-historico">
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">📋</span> Histórico de Não Conformidades
+                </div>
+
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <label class="filter-label">📅 Filtrar por Data Específica</label>
+                        <input type="date" class="form-input" id="filtroData" style="min-width: 160px;">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">📆 Filtrar por Mês</label>
+                        <input type="month" class="form-input" id="filtroMes" style="min-width: 160px;">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">🔍 Buscar Cliente / Registro / Nf</label>
+                        <input type="text" class="form-input" id="filtroBusca" placeholder="Digite para buscar..." style="min-width: 180px;">
+                    </div>
+                    <button class="btn btn-outline btn-sm" id="btnLimparFiltros" style="margin-bottom: 2px;">
+                        ✖ Limpar Filtros
+                    </button>
+                </div>
+
+                <div class="table-wrapper" id="tableWrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nº Registro</th>
+                                <th>Data</th>
+                                <th>Cliente</th>
+                                <th>Área</th>
+                                <th>Origem</th>
+                                <th>Nf / Nfd</th>
+                                <th>Causa Resumida</th>
+                                <th>Andamento</th>
+                                <th>Tempo Total</th>
+                                <th>Atrasos / Dias</th>
+                                <th>Bonificação (R$)</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaHistorico"></tbody>
+                    </table>
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <div class="icon">📭</div>
+                        <h3>Nenhum registro encontrado</h3>
+                        <p>Cadastre uma nova não conformidade ou ajuste os filtros.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ABA: DASHBOARD ===== -->
+        <div class="tab-content" id="tab-dashboard">
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">📊</span> Dashboard de Gráficos
+                </div>
+
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <label class="filter-label">📅 Dia Específico</label>
+                        <input type="date" class="form-input" id="dashFiltroData" style="min-width: 160px;">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">📆 Mês</label>
+                        <input type="month" class="form-input" id="dashFiltroMes" style="min-width: 160px;">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">🏭 Área</label>
+                        <select class="form-select" id="dashFiltroArea" style="min-width: 160px;">
+                            <option value="">Todas as Áreas</option>
+                            <option value="Produção">Produção</option>
+                            <option value="Qualidade">Qualidade</option>
+                            <option value="Logística">Logística</option>
+                            <option value="Expedição">Expedição</option>
+                            <option value="Comercial">Comercial</option>
+                            <option value="Compras">Compras</option>
+                            <option value="Manutenção">Manutenção</option>
+                            <option value="Administrativo">Administrativo</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-outline btn-sm" id="btnLimparFiltrosDash" style="margin-bottom: 2px;">
+                        ✖ Limpar Filtros
+                    </button>
+                    <button class="btn btn-pdf btn-sm" id="btnGerarPDF" style="margin-bottom: 2px;">
+                        📄 Gerar PDF
+                    </button>
+                </div>
+
+                <div class="charts-grid" id="chartsGridDashboard">
+                    <div class="chart-container">
+                        <h3>Ocorrência por Área</h3>
+                        <canvas id="graficoArea"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Quantidade Reclamada por Produto</h3>
+                        <canvas id="graficoProdutos"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Motivos de Ocorrência Resumida</h3>
+                        <canvas id="graficoMotivos"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Ocorrências Abertas vs Concluídas</h3>
+                        <canvas id="graficoStatus"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Bonificação por Produto (R$)</h3>
+                        <canvas id="graficoValoresProdutos"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Comparação Quantidade Reclamada vs Bonificação</h3>
+                        <canvas id="graficoComparacaoValores"></canvas>
+                    </div>
+                    <!-- ===== GRÁFICO: Nf / Nfd por Área Envolvida (SOMA DOS VALORES) ===== -->
+                    <div class="chart-container">
+                        <h3>Nf / Nfd por Área Envolvida (Valores R$)</h3>
+                        <canvas id="graficoNfNfdArea"></canvas>
+                    </div>
+                    <!-- ===== GRÁFICO + LISTA: ATRASOS / PRORROGAÇÃO ===== -->
+                    <div class="chart-container chart-container-full">
+                        <h3>Atrasos / Dias / Prorrogação (dias)</h3>
+                        <canvas id="graficoAtrasosProrrogacao"></canvas>
+                        <div id="listaAtrasosProrrogacao" class="lista-atrasos-prorrogacao"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🔍 Detalhes do Registro</h3>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-detail-grid" id="modalContent"></div>
+            <div class="btn-group" style="margin-top: 20px; justify-content: flex-end;">
+                <button class="btn btn-outline btn-sm" id="btnEditarDoModal">✏️ Editar</button>
+                <button class="btn btn-danger btn-sm" id="btnExcluirDoModal">🗑️ Excluir</button>
+                <button class="btn btn-outline btn-sm" id="btnFecharModal">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer"></div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ========================================================
+            // CONFIGURAÇÃO FIREBASE
+            // ========================================================
+            const firebaseConfig = {
+                apiKey: "AIzaSyDbrJvyDDTzlWQDs3_UejA-JI0lueQY1d8",
+                authDomain: "sacc-91ee3.firebaseapp.com",
+                projectId: "sacc-91ee3",
+                storageBucket: "sacc-91ee3.firebasestorage.app",
+                messagingSenderId: "898716969291",
+                appId: "1:898716969291:web:14fe249613244cb69520ce",
+                measurementId: "G-XQ68RJKM19"
+            };
+
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
+            db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+                if (err.code === 'failed-precondition') {
+                    console.warn('Persistência: múltiplas abas abertas.');
+                } else if (err.code === 'unimplemented') {
+                    console.warn('Persistência: navegador não suporta.');
+                }
+            });
+
+            const COLLECTION_NAME = 'registros';
+            const LIMITE_REGISTROS = 2000;
+            const DIAS_ALERTA_PRAZO = 10;
+
+            Chart.register(ChartDataLabels);
+
+            // ========================================================
+            // ESTADO
+            // ========================================================
+            let registros = [];
+            let registroEmEdicao = null;
+            let registroSelecionado = null;
+            let isLoading = false;
+
+            let chartArea = null;
+            let chartProdutos = null;
+            let chartMotivos = null;
+            let chartStatus = null;
+            let chartValoresProdutos = null;
+            let chartComparacaoValores = null;
+            let chartAtrasosProrrogacao = null;
+            let chartNfNfdArea = null;
+
+            // ========================================================
+            // ELEMENTOS DOM
+            // ========================================================
+            const $ = (id) => document.getElementById(id);
+
+            const form = $('formNaoConformidade');
+            const numRegistroInput = $('numRegistro');
+            const clienteInput = $('cliente');
+            const dataOcorrenciaInput = $('dataOcorrencia');
+            const areaEnvolvidaInput = $('areaEnvolvida');
+            const origemRadios = document.querySelectorAll('input[name="origem"]');
+            const causaResumidaInput = $('causaResumida');
+            const causaCompletaInput = $('causaCompleta');
+            const codItemInput = $('codItem');
+            const descricaoProdutoInput = $('descricaoProduto');
+            const andamentoInput = $('andamento');
+            const solucaoProblemaInput = $('solucaoProblema');
+            const valorNFDInput = $('valorNFD');
+            const atrasosDiasInput = $('atrasosDias');
+            const bonificacaoInput = $('bonificacao');
+            const prorrogacaoInput = $('prorrogacao');
+            const reemissaoInput = $('reemissao');
+            const nfNfdInput = $('nfNfd');
+
+            const btnSalvar = $('btnSalvar');
+            const btnLimpar = $('btnLimpar');
+            const btnLimparFiltros = $('btnLimparFiltros');
+
+            const filtroData = $('filtroData');
+            const filtroMes = $('filtroMes');
+            const filtroBusca = $('filtroBusca');
+
+            const tabelaHistorico = $('tabelaHistorico');
+            const emptyState = $('emptyState');
+            const tableWrapper = $('tableWrapper');
+
+            const statTotal = $('statTotal');
+            const statPendentes = $('statPendentes');
+            const statConcluidos = $('statConcluidos');
+            const statEmAtraso = $('statEmAtraso');
+            const statAlertaBadge = $('statAlertaBadge');
+
+            const modalOverlay = $('modalOverlay');
+            const modalContent = $('modalContent');
+            const modalClose = $('modalClose');
+            const btnEditarDoModal = $('btnEditarDoModal');
+            const btnExcluirDoModal = $('btnExcluirDoModal');
+            const btnFecharModal = $('btnFecharModal');
+
+            const toastContainer = $('toastContainer');
+            const globalLoading = $('globalLoading');
+
+            const dashFiltroData = $('dashFiltroData');
+            const dashFiltroMes = $('dashFiltroMes');
+            const dashFiltroArea = $('dashFiltroArea');
+            const btnLimparFiltrosDash = $('btnLimparFiltrosDash');
+            const btnGerarPDF = $('btnGerarPDF');
+
+            const canvasArea = $('graficoArea');
+            const canvasProdutos = $('graficoProdutos');
+            const canvasMotivos = $('graficoMotivos');
+            const canvasStatus = $('graficoStatus');
+            const canvasValoresProdutos = $('graficoValoresProdutos');
+            const canvasComparacaoValores = $('graficoComparacaoValores');
+            const canvasAtrasosProrrogacao = $('graficoAtrasosProrrogacao');
+            const canvasNfNfdArea = $('graficoNfNfdArea');
+            const listaAtrasosProrrogacao = $('listaAtrasosProrrogacao');
+
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            // ========================================================
+            // LISTA DE PRODUTOS
+            // ========================================================
+            const listaProdutos = [
+                { codigo: '100001', descricao: 'D32 R PR' },
+                { codigo: '100002', descricao: 'D32 R BR' },
+                { codigo: '100003', descricao: 'D32 RA PR' },
+                { codigo: '100004', descricao: 'D32 RA BR' },
+                { codigo: '100005', descricao: 'D32 RB PR' },
+                { codigo: '100006', descricao: 'D32 RB BR' },
+                { codigo: '100007', descricao: 'D35 RA BR' },
+                { codigo: '100008', descricao: 'D35 RB PR' },
+                { codigo: '100009', descricao: 'D35 RA PR' },
+                { codigo: '100010', descricao: 'D35 RB BR' },
+                { codigo: '100011', descricao: 'D50 R PR' },
+                { codigo: '100012', descricao: 'D50 R BR' },
+                { codigo: '100013', descricao: 'D50 RA PR' },
+                { codigo: '100014', descricao: 'D50 RA BR' },
+                { codigo: '100015', descricao: 'D50 RB PR' },
+                { codigo: '100016', descricao: 'D50 RB BR' },
+                { codigo: '100017', descricao: 'D56 R PR' },
+                { codigo: '100018', descricao: 'D56 R BR' },
+                { codigo: '100019', descricao: 'D56 RA PR' },
+                { codigo: '100020', descricao: 'D56 RA BR' },
+                { codigo: '100021', descricao: 'D56 RB PR' },
+                { codigo: '100022', descricao: 'D56 RB BR' },
+                { codigo: '100023', descricao: 'D62 R BR' },
+                { codigo: '100024', descricao: 'D62 R PR' },
+                { codigo: '100025', descricao: 'D78 R BR' },
+                { codigo: '100026', descricao: 'D78 RB BR' },
+                { codigo: '100027', descricao: 'D32 NY PR' },
+                { codigo: '100029', descricao: 'D32 NYB PR' },
+                { codigo: '100031', descricao: 'D50 NY PR' },
+                { codigo: '100032', descricao: 'D50 NYA PR' },
+                { codigo: '100033', descricao: 'D50 NYB PR' },
+                { codigo: '100035', descricao: 'D32 ATN BR' },
+                { codigo: '100036', descricao: 'D32 H PR' },
+                { codigo: '100039', descricao: 'DA 08 POTE' },
+                { codigo: '100040', descricao: 'DA 10 POTE' },
+                { codigo: '100041', descricao: 'DA 17 POTE' },
+                { codigo: '100042', descricao: 'DA 18 POTE' },
+                { codigo: '100043', descricao: 'DA 20 POTE' },
+                { codigo: '100044', descricao: 'DA 88 POTE' },
+                { codigo: '100045', descricao: 'DA 90 POTE' },
+                { codigo: '100046', descricao: 'DA 91 POTE' },
+                { codigo: '100047', descricao: 'D630 FATIA' },
+                { codigo: '100048', descricao: 'D640 POTE' },
+                { codigo: '100049', descricao: 'D645 POTE' },
+                { codigo: '100050', descricao: 'D650 POTE' },
+                { codigo: '100051', descricao: 'D742 R' },
+                { codigo: '100052', descricao: 'D742 P' },
+                { codigo: '100053', descricao: 'D750 R' },
+                { codigo: '100054', descricao: 'D750 P' },
+                { codigo: '100055', descricao: 'D771 R' },
+                { codigo: '100056', descricao: 'D771 P' },
+                { codigo: '100057', descricao: 'D695 CR' },
+                { codigo: '100058', descricao: 'D695 PR' },
+                { codigo: '100059', descricao: 'D695 BR' },
+                { codigo: '100060', descricao: 'D730 POTE' },
+                { codigo: '100061', descricao: 'D731 POTE' },
+                { codigo: '100062', descricao: 'D732 POTE' },
+                { codigo: '100063', descricao: 'DTP30 SEM FUROS' },
+                { codigo: '100064', descricao: 'DTP20 SEM FUROS' },
+                { codigo: '100066', descricao: 'DPOF10 ESOJO COM TAMPA' },
+                { codigo: '100067', descricao: 'D78 R PR' },
+                { codigo: '100070', descricao: 'DF500 ESTOJO ARTICULADO' },
+                { codigo: '100071', descricao: 'D681 POTE' },
+                { codigo: '100072', descricao: 'DF250 BANDEJA PARA FRUTAS' },
+                { codigo: '100087', descricao: 'D37 RA PR' },
+                { codigo: '100088', descricao: 'D37 RA BR' },
+                { codigo: '100089', descricao: 'D37 RB PR' },
+                { codigo: '100090', descricao: 'D37 RB BR' },
+                { codigo: '100095', descricao: 'D60 R PR' },
+                { codigo: '100096', descricao: 'D60 R BR' },
+                { codigo: '100097', descricao: 'D60 RA PR' },
+                { codigo: '100098', descricao: 'D60 RA BR' },
+                { codigo: '100099', descricao: 'D60 RB PR' },
+                { codigo: '100100', descricao: 'D60 RB BR' },
+                { codigo: '100101', descricao: 'D63 R BR' },
+                { codigo: '100102', descricao: 'D63 R PR' },
+                { codigo: '100103', descricao: 'D63 RA BR' },
+                { codigo: '100104', descricao: 'D63 RA PR' },
+                { codigo: '100105', descricao: 'D64 R PR' },
+                { codigo: '100106', descricao: 'D64 R BR' },
+                { codigo: '100109', descricao: 'D70 R PR' },
+                { codigo: '100110', descricao: 'D70 R BR' },
+                { codigo: '100111', descricao: 'D70 RB PR' },
+                { codigo: '100112', descricao: 'D70 RB BR' },
+                { codigo: '100113', descricao: 'D80 RA PR' },
+                { codigo: '100114', descricao: 'D80 RA BR' },
+                { codigo: '100115', descricao: 'D80 RB PR' },
+                { codigo: '100116', descricao: 'D80 RB BR' },
+                { codigo: '100137', descricao: 'D34P' },
+                { codigo: '100138', descricao: 'D34' },
+                { codigo: '100140', descricao: 'D540' },
+                { codigo: '100156', descricao: 'DA 16 POTE' },
+                { codigo: '100216', descricao: 'DA 14 POTE' }
+            ];
+
+            const mapaCodigoParaDescricao = {};
+            const mapaDescricaoParaCodigo = {};
+            listaProdutos.forEach(item => {
+                const codigo = item.codigo.trim();
+                const descricao = item.descricao.trim().replace(/\s+/g, ' ');
+                mapaCodigoParaDescricao[codigo] = descricao;
+                mapaDescricaoParaCodigo[descricao] = codigo;
+            });
+
+            // ========================================================
+            // UTILITÁRIOS
+            // ========================================================
+            function normalizarTexto(texto) {
+                return String(texto || '').trim().replace(/\s+/g, ' ');
+            }
+
+            function debounce(fn, delay) {
+                let timer = null;
+                return function(...args) {
+                    if (timer) clearTimeout(timer);
+                    timer = setTimeout(() => { timer = null; fn.apply(this, args); }, delay);
+                };
+            }
+
+            function preencherDatalistDescricao() {
+                const datalist = $('listaDescricaoProdutos');
+                if (!datalist) return;
+                const fragment = document.createDocumentFragment();
+                listaProdutos.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.descricao;
+                    fragment.appendChild(option);
+                });
+                datalist.innerHTML = '';
+                datalist.appendChild(fragment);
+            }
+
+            function parseValorBR(valor) {
+                if (valor === null || valor === undefined) return null;
+                valor = String(valor).trim();
+                if (!valor) return null;
+                const temVirgula = valor.includes(',');
+                const temPonto = valor.includes('.');
+                if (temVirgula) {
+                    valor = valor.replace(/\./g, '').replace(',', '.');
+                } else if (temPonto) {
+                    const partes = valor.split('.');
+                    if (partes.length > 2) {
+                        valor = partes.join('');
+                    } else if (partes[1] && partes[1].length === 3) {
+                        valor = partes.join('');
+                    }
+                }
+                const num = parseFloat(valor);
+                return isNaN(num) ? null : num;
+            }
+
+            function formatarValorInput(valor) {
+                if (valor === null || valor === undefined || isNaN(valor)) return '';
+                return Number(valor).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2, maximumFractionDigits: 2
+                });
+            }
+
+            function formatarQuantidadeInput(valor) {
+                if (valor === null || valor === undefined || isNaN(valor)) return '';
+                return Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+            }
+
+            function formatarData(dataISO) {
+                if (!dataISO) return '-';
+                const partes = dataISO.split('-');
+                if (partes.length !== 3) return dataISO;
+                return `${partes[2]}/${partes[1]}/${partes[0]}`;
+            }
+
+            function formatarDataHora(timestamp) {
+                if (!timestamp) return '-';
+                const dt = new Date(timestamp);
+                if (isNaN(dt.getTime())) return '-';
+                return dt.toLocaleDateString('pt-BR') + ' ' +
+                    dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            }
+
+            function formatarValor(valor) {
+                if (valor === null || valor === undefined || valor === '' || isNaN(valor)) return '-';
+                return 'R$ ' + parseFloat(valor).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2, maximumFractionDigits: 2
+                });
+            }
+
+            function formatarMoedaBR(valor) {
+                if (valor === null || valor === undefined || isNaN(valor)) return '0,00';
+                return parseFloat(valor).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2, maximumFractionDigits: 2
+                });
+            }
+
+            function formatarDuracao(ms) {
+                if (!ms || ms < 0) ms = 0;
+                const segundos = Math.floor(ms / 1000);
+                const dias = Math.floor(segundos / 86400);
+                const horas = Math.floor((segundos % 86400) / 3600);
+                const minutos = Math.floor((segundos % 3600) / 60);
+                let resultado = '';
+                if (dias > 0) resultado += `${dias}d `;
+                if (horas > 0 || dias > 0) resultado += `${horas}h `;
+                resultado += `${minutos}min`;
+                return resultado;
+            }
+
+            function calcularDiasAberto(registro) {
+                if (!registro || !registro.dataAbertura) return 0;
+                const inicio = new Date(registro.dataAbertura).getTime();
+                if (isNaN(inicio)) return 0;
+                const agora = Date.now();
+                const dias = Math.floor((agora - inicio) / 86400000);
+                return Math.max(0, dias);
+            }
+
+            function isAlertaPrazo(registro) {
+                if (!registro) return false;
+                if (registro.andamento === 'Concluído') return false;
+                return calcularDiasAberto(registro) >= DIAS_ALERTA_PRAZO;
+            }
+
+            function getOrigemSelecionada() {
+                for (const radio of origemRadios) {
+                    if (radio.checked) return radio.value;
+                }
+                return 'Interno';
+            }
+
+            function setOrigemSelecionada(valor) {
+                for (const radio of origemRadios) {
+                    radio.checked = (radio.value === valor);
+                }
+            }
+
+            const STATUS_INFO = {
+                'Abertura da RNC':              { badge: 'badge-abertura',      icon: '🔓' },
+                'Aguardando liberação':         { badge: 'badge-liberacao',     icon: '🔐' },
+                'Aguardando fiscal da entrada': { badge: 'badge-fiscal',        icon: '🧾' },
+                'Aguardando financeiro':        { badge: 'badge-financeiro',    icon: '💰' },
+                'Aguardando nota de devolução': { badge: 'badge-aguardando',    icon: '⏳' },
+                'Cliente contabilizando':       { badge: 'badge-contabilizando',icon: '📊' },
+                'Enviar reposição':             { badge: 'badge-reposicao',     icon: '📦' },
+                'Concluído':                    { badge: 'badge-concluido',     icon: '✅' }
+            };
+
+            const STATUS_PADRAO = { badge: '', icon: '•' };
+
+            function getStatusBadgeClass(andamento) {
+                return (STATUS_INFO[andamento] || STATUS_PADRAO).badge;
+            }
+
+            function getStatusIcon(andamento) {
+                return (STATUS_INFO[andamento] || STATUS_PADRAO).icon;
+            }
+
+            function mostrarToast(mensagem, tipo = 'success') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${tipo}`;
+                const icon = tipo === 'success' ? '✅' : tipo === 'error' ? '❌' : tipo === 'alert-prazo' ? '🚨' : '⚠️';
+                toast.innerHTML = `<span>${icon}</span> <span>${mensagem}</span>`;
+                toastContainer.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.4s ease';
+                    setTimeout(() => toast.remove(), 400);
+                }, 3200);
+            }
+
+            function setLoadingState(loading) {
+                isLoading = loading;
+                if (loading) {
+                    btnSalvar.disabled = true;
+                    btnSalvar.innerHTML = '<span class="loading-indicator"></span> Salvando...';
+                } else {
+                    btnSalvar.disabled = false;
+                    if (registroEmEdicao !== null) {
+                        btnSalvar.innerHTML = '✏️ Atualizar Registro';
+                    } else {
+                        btnSalvar.innerHTML = '💾 Salvar Registro';
+                    }
+                }
+            }
+
+            function mostrarLoadingGlobal(mostrar, texto) {
+                if (!globalLoading) return;
+                if (texto) {
+                    const txt = globalLoading.querySelector('.txt');
+                    if (txt) txt.textContent = texto;
+                }
+                globalLoading.classList.toggle('active', !!mostrar);
+            }
+
+            // ========================================================
+            // FIREBASE - OPERAÇÕES
+            // ========================================================
+            async function carregarRegistrosDoFirebase() {
+                const querySnapshot = await db.collection(COLLECTION_NAME)
+                    .limit(LIMITE_REGISTROS)
+                    .get();
+
+                registros = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    data.docId = doc.id;
+                    if (data.bonificacao === undefined) data.bonificacao = null;
+                    if (data.prorrogacao === undefined) data.prorrogacao = null;
+                    if (data.reemissao === undefined) data.reemissao = null;
+                    if (data.nfNfd === undefined) data.nfNfd = '';
+                    if (data.atrasosDias === undefined) data.atrasosDias = null;
+                    registros.push(data);
+                });
+
+                registros.sort((a, b) => {
+                    const numA = parseInt(a.numRegistro) || 0;
+                    const numB = parseInt(b.numRegistro) || 0;
+                    return numB - numA;
+                });
+            }
+
+            async function salvarRegistroNoFirebase(dados, docId = null) {
+                if (docId) {
+                    await db.collection(COLLECTION_NAME).doc(docId).update(dados);
+                    return docId;
+                } else {
+                    const docRef = await db.collection(COLLECTION_NAME).add(dados);
+                    return docRef.id;
+                }
+            }
+
+            async function excluirRegistroDoFirebase(docId) {
+                await db.collection(COLLECTION_NAME).doc(docId).delete();
+            }
+
+            // ========================================================
+            // CRUD
+            // ========================================================
+            function atualizarStats() {
+                statTotal.textContent = registros.length;
+                let pendentes = 0, concluidos = 0, emAtraso = 0;
+                for (const r of registros) {
+                    if (r.andamento === 'Concluído') concluidos++;
+                    else {
+                        pendentes++;
+                        if (isAlertaPrazo(r)) emAtraso++;
+                    }
+                }
+                statPendentes.textContent = pendentes;
+                statConcluidos.textContent = concluidos;
+                statEmAtraso.textContent = emAtraso;
+
+                if (emAtraso > 0) {
+                    statAlertaBadge.style.display = 'block';
+                } else {
+                    statAlertaBadge.style.display = 'none';
+                }
+            }
+
+            function calcularTempoTotal(registro) {
+                if (!registro.dataAbertura) return 0;
+                const inicio = new Date(registro.dataAbertura).getTime();
+                if (isNaN(inicio)) return 0;
+                let fim;
+                if (registro.andamento === 'Concluído' && registro.historicoEtapas) {
+                    const etapaConcluida = registro.historicoEtapas.find(e => e.etapa === 'Concluído');
+                    fim = etapaConcluida ? new Date(etapaConcluida.timestamp).getTime() : Date.now();
+                } else {
+                    fim = Date.now();
+                }
+                if (isNaN(fim)) fim = Date.now();
+                return Math.max(0, fim - inicio);
+            }
+
+            function popularSelectAndamento(modoEdicao = false, andamentoAtual = null) {
+                const opcoes = [
+                    { valor: 'Abertura da RNC', texto: '🔓 Abertura da RNC' },
+                    { valor: 'Aguardando liberação', texto: '🔐 Aguardando liberação' },
+                    { valor: 'Aguardando fiscal da entrada', texto: '🧾 Aguardando fiscal da entrada' },
+                    { valor: 'Aguardando financeiro', texto: '💰 Aguardando financeiro' },
+                    { valor: 'Aguardando nota de devolução', texto: '⏳ Aguardando nota de devolução' },
+                    { valor: 'Cliente contabilizando', texto: '📊 Cliente contabilizando' },
+                    { valor: 'Enviar reposição', texto: '📦 Enviar reposição' },
+                    { valor: 'Concluído', texto: '✅ Concluído' }
+                ];
+                const valorSelecionado = (modoEdicao && andamentoAtual) ? andamentoAtual : 'Abertura da RNC';
+                andamentoInput.innerHTML = '';
+                const fragment = document.createDocumentFragment();
+                opcoes.forEach(op => {
+                    const opt = document.createElement('option');
+                    opt.value = op.valor;
+                    opt.textContent = op.texto;
+                    if (op.valor === valorSelecionado) opt.selected = true;
+                    fragment.appendChild(opt);
+                });
+                andamentoInput.appendChild(fragment);
+            }
+
+            function limparFormulario() {
+                form.reset();
+                numRegistroInput.value = '';
+                dataOcorrenciaInput.value = new Date().toISOString().split('T')[0];
+                setOrigemSelecionada('Interno');
+                popularSelectAndamento(false);
+                valorNFDInput.value = '';
+                atrasosDiasInput.value = '';
+                bonificacaoInput.value = '';
+                prorrogacaoInput.value = '';
+                reemissaoInput.value = '';
+                nfNfdInput.value = '';
+                codItemInput.value = '';
+                descricaoProdutoInput.value = '';
+                registroEmEdicao = null;
+                btnSalvar.innerHTML = '💾 Salvar Registro';
+                btnSalvar.className = 'btn btn-success';
+                btnSalvar.disabled = false;
+                areaEnvolvidaInput.focus();
+            }
+
+            function coletarDadosFormulario() {
+                const prorrogRaw = prorrogacaoInput.value.trim();
+                const reemissaoRaw = reemissaoInput.value.trim();
+                const qtdReclamadaRaw = valorNFDInput.value.trim();
+                const atrasosDiasRaw = atrasosDiasInput.value.trim();
+
+                let prorrog = null;
+                if (prorrogRaw) {
+                    const n = parseValorBR(prorrogRaw);
+                    if (n !== null) prorrog = Math.round(n);
+                }
+                let reemissao = null;
+                if (reemissaoRaw) {
+                    const n = parseValorBR(reemissaoRaw);
+                    if (n !== null) reemissao = Math.round(n);
+                }
+                let qtdReclamada = null;
+                if (qtdReclamadaRaw) {
+                    const n = parseValorBR(qtdReclamadaRaw);
+                    if (n !== null) qtdReclamada = Math.round(n);
+                }
+                let atrasosDias = null;
+                if (atrasosDiasRaw) {
+                    const n = parseValorBR(atrasosDiasRaw);
+                    if (n !== null) atrasosDias = Math.round(n);
+                }
+
+                return {
+                    numRegistro: numRegistroInput.value.trim(),
+                    cliente: clienteInput.value.trim(),
+                    dataOcorrencia: dataOcorrenciaInput.value,
+                    areaEnvolvida: areaEnvolvidaInput.value,
+                    origem: getOrigemSelecionada(),
+                    causaResumida: causaResumidaInput.value.trim(),
+                    causaCompleta: causaCompletaInput.value.trim(),
+                    codItem: codItemInput.value.trim(),
+                    descricaoProduto: descricaoProdutoInput.value.trim(),
+                    andamento: andamentoInput.value,
+                    solucaoProblema: solucaoProblemaInput.value.trim(),
+                    valorNFD: qtdReclamada,
+                    atrasosDias: atrasosDias,
+                    bonificacao: parseValorBR(bonificacaoInput.value),
+                    prorrogacao: prorrog,
+                    reemissao: reemissao,
+                    nfNfd: nfNfdInput.value.trim()
+                };
+            }
+
+            function validarFormulario(dados) {
+                const checks = [
+                    [dados.numRegistro, 'O campo "Nº Registro" é obrigatório!', numRegistroInput],
+                    [dados.cliente, 'O campo "Cliente" é obrigatório!', clienteInput],
+                    [dados.dataOcorrencia, 'O campo "Data da Ocorrência" é obrigatório!', dataOcorrenciaInput],
+                    [dados.areaEnvolvida, 'O campo "Área Envolvida" é obrigatório!', areaEnvolvidaInput],
+                    [dados.causaResumida, 'O campo "Causa Resumida" é obrigatório!', causaResumidaInput],
+                    [dados.causaCompleta, 'O campo "Causa do Problema (Completo)" é obrigatório!', causaCompletaInput],
+                    [dados.andamento, 'O campo "Andamento" é obrigatório!', andamentoInput]
+                ];
+                for (const [valor, msg, input] of checks) {
+                    if (!valor) {
+                        mostrarToast(msg, 'error');
+                        if (input && input.focus) input.focus();
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            async function salvarRegistro(e) {
+                e.preventDefault();
+                if (isLoading) return;
+
+                const dados = coletarDadosFormulario();
+                if (!validarFormulario(dados)) return;
+
+                const agora = new Date().toISOString();
+                setLoadingState(true);
+
+                try {
+                    if (registroEmEdicao !== null) {
+                        const idx = registros.indexOf(registroEmEdicao);
+                        if (idx === -1) {
+                            mostrarToast('Registro não encontrado localmente.', 'error');
+                            setLoadingState(false);
+                            return;
+                        }
+                        const original = registros[idx];
+                        const mudouAndamento = original.andamento !== dados.andamento;
+
+                        const dadosParaSalvar = {
+                            ...dados,
+                            dataAbertura: original.dataAbertura || agora,
+                            historicoEtapas: Array.isArray(original.historicoEtapas)
+                                ? [...original.historicoEtapas]
+                                : []
+                        };
+
+                        if (mudouAndamento) {
+                            dadosParaSalvar.historicoEtapas.push({
+                                etapa: dados.andamento,
+                                timestamp: agora
+                            });
+                        }
+
+                        await salvarRegistroNoFirebase(dadosParaSalvar, original.docId);
+
+                        registros[idx] = { ...dadosParaSalvar, docId: original.docId };
+                        registros.sort((a, b) => {
+                            const numA = parseInt(a.numRegistro) || 0;
+                            const numB = parseInt(b.numRegistro) || 0;
+                            return numB - numA;
+                        });
+
+                        mostrarToast(`Registro #${dados.numRegistro} atualizado com sucesso!`, 'success');
+                        registroEmEdicao = null;
+                    } else {
+                        const novoRegistro = {
+                            ...dados,
+                            dataAbertura: agora,
+                            historicoEtapas: [
+                                { etapa: dados.andamento || 'Abertura da RNC', timestamp: agora }
+                            ]
+                        };
+                        const novoDocId = await salvarRegistroNoFirebase(novoRegistro);
+
+                        registros.push({ ...novoRegistro, docId: novoDocId });
+                        registros.sort((a, b) => {
+                            const numA = parseInt(a.numRegistro) || 0;
+                            const numB = parseInt(b.numRegistro) || 0;
+                            return numB - numA;
+                        });
+
+                        mostrarToast(`Registro #${dados.numRegistro} salvo com sucesso!`, 'success');
+                    }
+
+                    atualizarStats();
+                    renderizarTabela();
+                    limparFormulario();
+                } catch (err) {
+                    console.error('Erro ao salvar:', err);
+                    let msg = 'Erro ao salvar no Firebase! Verifique sua conexão.';
+                    if (err && err.code === 'permission-denied') {
+                        msg = 'Permissão negada no Firebase. Verifique as regras de segurança.';
+                    } else if (err && err.code === 'unavailable') {
+                        msg = 'Serviço indisponível. Verifique sua internet e tente novamente.';
+                    }
+                    mostrarToast(msg, 'error');
+                } finally {
+                    setLoadingState(false);
+                }
+            }
+
+            async function excluirRegistro(indiceReal) {
+                const registro = registros[indiceReal];
+                if (!registro) return;
+                if (!confirm(`Tem certeza que deseja excluir o registro #${registro.numRegistro} do cliente ${registro.cliente}?`)) return;
+
+                try {
+                    if (registro.docId) {
+                        await excluirRegistroDoFirebase(registro.docId);
+                    }
+                    registros.splice(indiceReal, 1);
+                    atualizarStats();
+                    renderizarTabela();
+                    fecharModal();
+                    mostrarToast(`Registro #${registro.numRegistro} excluído!`, 'success');
+                } catch (err) {
+                    console.error('Erro ao excluir:', err);
+                    mostrarToast('Erro ao excluir do Firebase! Verifique sua conexão.', 'error');
+                }
+            }
+
+            function editarRegistro(indiceReal) {
+                const registro = registros[indiceReal];
+                if (!registro) return;
+                registroEmEdicao = registro;
+
+                numRegistroInput.value = registro.numRegistro || '';
+                clienteInput.value = registro.cliente || '';
+                dataOcorrenciaInput.value = registro.dataOcorrencia || '';
+                areaEnvolvidaInput.value = registro.areaEnvolvida || '';
+                setOrigemSelecionada(registro.origem || 'Interno');
+                causaResumidaInput.value = registro.causaResumida || '';
+                causaCompletaInput.value = registro.causaCompleta || '';
+                codItemInput.value = registro.codItem || '';
+                descricaoProdutoInput.value = registro.descricaoProduto || '';
+                popularSelectAndamento(true, registro.andamento);
+                solucaoProblemaInput.value = registro.solucaoProblema || '';
+                valorNFDInput.value = (registro.valorNFD !== null && registro.valorNFD !== undefined)
+                    ? formatarQuantidadeInput(registro.valorNFD) : '';
+                atrasosDiasInput.value = (registro.atrasosDias !== null && registro.atrasosDias !== undefined)
+                    ? formatarQuantidadeInput(registro.atrasosDias) : '';
+                bonificacaoInput.value = formatarValorInput(registro.bonificacao);
+                prorrogacaoInput.value = (registro.prorrogacao !== null && registro.prorrogacao !== undefined)
+                    ? formatarQuantidadeInput(registro.prorrogacao) : '';
+                reemissaoInput.value = (registro.reemissao !== null && registro.reemissao !== undefined)
+                    ? formatarQuantidadeInput(registro.reemissao) : '';
+                nfNfdInput.value = registro.nfNfd || '';
+
+                btnSalvar.innerHTML = '✏️ Atualizar Registro';
+                btnSalvar.className = 'btn btn-warning';
+                btnSalvar.disabled = false;
+
+                form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                fecharModal();
+                alternarAba('registro');
+                mostrarToast(`Editando registro #${registro.numRegistro}`, 'warning');
+            }
+
+            function verDetalhes(indiceReal) {
+                const registro = registros[indiceReal];
+                if (!registro) return;
+                registroSelecionado = registro;
+
+                const badgeClass = getStatusBadgeClass(registro.andamento);
+                const statusIcon = getStatusIcon(registro.andamento);
+                const tempoTotal = calcularTempoTotal(registro);
+                const diasAberto = calcularDiasAberto(registro);
+                const emAlerta = isAlertaPrazo(registro);
+
+                const prorrogTexto = (registro.prorrogacao !== null && registro.prorrogacao !== undefined)
+                    ? `${registro.prorrogacao} dia(s)` : '-';
+                const reemissaoTexto = (registro.reemissao !== null && registro.reemissao !== undefined)
+                    ? `${registro.reemissao} dia(s)` : '-';
+                const atrasosTexto = (registro.atrasosDias !== null && registro.atrasosDias !== undefined)
+                    ? `${registro.atrasosDias} dia(s)` : '-';
+
+                let htmlTimeline = '';
+                if (Array.isArray(registro.historicoEtapas) && registro.historicoEtapas.length > 0) {
+                    htmlTimeline = '<div class="timeline">';
+                    registro.historicoEtapas.forEach(etapa => {
+                        htmlTimeline += `
+                            <div class="timeline-item">
+                                <div class="etapa">${getStatusIcon(etapa.etapa)} ${etapa.etapa}</div>
+                                <div class="data">${formatarDataHora(etapa.timestamp)}</div>
+                            </div>`;
+                    });
+                    htmlTimeline += '</div>';
+                }
+
+                const alertaHTML = emAlerta ? `
+                    <div class="alerta-prazo-box">
+                        <div class="icon-alerta">⏰</div>
+                        <div class="texto-alerta">
+                            <div class="titulo">🚨 Alerta de Prazo Excedido</div>
+                            <div class="descricao">
+                                Esta reclamação está aberta há <strong>${diasAberto} dias</strong>.
+                                O prazo máximo de <strong>${DIAS_ALERTA_PRAZO} dias</strong> foi ultrapassado.
+                                Verifique o andamento e priorize a tratativa.
+                            </div>
+                        </div>
+                    </div>
+                ` : '';
+
+                modalContent.innerHTML = `
+                    ${alertaHTML}
+                    <div class="modal-detail-item"><div class="label">Nº Registro</div><div class="value">#${registro.numRegistro}</div></div>
+                    <div class="modal-detail-item"><div class="label">Cliente</div><div class="value">${registro.cliente || '-'}</div></div>
+                    <div class="modal-detail-item"><div class="label">Data da Ocorrência</div><div class="value">${formatarData(registro.dataOcorrencia)}</div></div>
+                    <div class="modal-detail-item"><div class="label">Área Envolvida</div><div class="value">${registro.areaEnvolvida || '-'}</div></div>
+                    <div class="modal-detail-item"><div class="label">Origem</div><div class="value">${registro.origem === 'Interno' ? '🏭 Interno' : '🌐 Externo'}</div></div>
+                    <div class="modal-detail-item"><div class="label">Andamento</div><div class="value"><span class="badge ${badgeClass}">${statusIcon} ${registro.andamento}</span></div></div>
+                    <div class="modal-detail-item"><div class="label">Tempo Total</div><div class="value">${formatarDuracao(tempoTotal)}</div></div>
+                    <div class="modal-detail-item"><div class="label">Código do Item</div><div class="value">${registro.codItem || '-'}</div></div>
+                    <div class="modal-detail-item"><div class="label">Descrição do Produto</div><div class="value">${registro.descricaoProduto || '-'}</div></div>
+                    <div class="modal-detail-item"><div class="label">Quantidade Reclamada</div><div class="value">${registro.valorNFD !== null && registro.valorNFD !== undefined ? registro.valorNFD : '-'}</div></div>
+                    <div class="modal-detail-item"><div class="label">Atrasos / Dias</div><div class="value">${atrasosTexto}</div></div>
+                    <div class="modal-detail-item"><div class="label">Nf / Nfd</div><div class="value">${registro.nfNfd || '-'}</div></div>
+                    <div class="modal-detail-item"><div class="label">Bonificação</div><div class="value">${formatarValor(registro.bonificacao)}</div></div>
+                    <div class="modal-detail-item"><div class="label">Prorrogação</div><div class="value">${prorrogTexto}</div></div>
+                    <div class="modal-detail-item"><div class="label">Reemissão</div><div class="value">${reemissaoTexto}</div></div>
+                    <div class="modal-detail-item full"><div class="label">Causa Resumida</div><div class="value">${registro.causaResumida || '-'}</div></div>
+                    <div class="modal-detail-item full"><div class="label">Causa do Problema (Completo)</div><div class="value">${registro.causaCompleta || '-'}</div></div>
+                    <div class="modal-detail-item full"><div class="label">Solução do Problema</div><div class="value">${registro.solucaoProblema || 'Não informada'}</div></div>
+                    <div class="modal-detail-item full"><div class="label">Histórico de Etapas</div><div class="value">${htmlTimeline || 'Sem histórico'}</div></div>
+                `;
+
+                modalOverlay.classList.add('active');
+            }
+
+            function fecharModal() {
+                modalOverlay.classList.remove('active');
+                registroSelecionado = null;
+            }
+
+            // ========================================================
+            // TABELA
+            // ========================================================
+            function renderizarTabela() {
+                const dataFiltro = filtroData.value;
+                const mesFiltro = filtroMes.value;
+                const busca = filtroBusca.value.toLowerCase().trim();
+
+                const filtrados = registros.filter(r => {
+                    if (dataFiltro && r.dataOcorrencia !== dataFiltro) return false;
+                    if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
+                    if (busca) {
+                        const campos = [
+                            r.numRegistro, r.cliente, r.causaResumida, r.causaCompleta,
+                            r.codItem, r.descricaoProduto, r.areaEnvolvida, r.andamento,
+                            r.nfNfd
+                        ].join(' ').toLowerCase();
+                        if (!campos.includes(busca)) return false;
+                    }
+                    return true;
+                });
+
+                tabelaHistorico.innerHTML = '';
+
+                if (filtrados.length === 0) {
+                    emptyState.style.display = 'block';
+                    const tbl = tableWrapper.querySelector('table');
+                    if (tbl) tbl.style.display = 'none';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                const tbl = tableWrapper.querySelector('table');
+                if (tbl) tbl.style.display = 'table';
+
+                const fragment = document.createDocumentFragment();
+
+                filtrados.forEach((r) => {
+                    const idxReal = registros.indexOf(r);
+                    const tr = document.createElement('tr');
+                    const badgeClass = getStatusBadgeClass(r.andamento);
+                    const statusIcon = getStatusIcon(r.andamento);
+                    const tempoTotal = calcularTempoTotal(r);
+                    const bonif = parseFloat(r.bonificacao) || 0;
+                    const emAlerta = isAlertaPrazo(r);
+                    const diasAberto = calcularDiasAberto(r);
+
+                    if (emAlerta) {
+                        tr.classList.add('row-alerta');
+                    }
+
+                    const badgeAlertaHTML = emAlerta
+                        ? `<span class="badge-prazo" title="Reclamação aberta há ${diasAberto} dias. Ultrapassou o prazo de ${DIAS_ALERTA_PRAZO} dias.">
+                                <span class="icon">⏰</span>${diasAberto} DIAS
+                           </span>`
+                        : '';
+
+                    const atrasosTexto = (r.atrasosDias !== null && r.atrasosDias !== undefined)
+                        ? `${r.atrasosDias} dia(s)` : '-';
+
+                    tr.innerHTML = `
+                        <td>
+                            <strong>#${r.numRegistro}</strong>
+                            ${badgeAlertaHTML}
+                        </td>
+                        <td>${formatarData(r.dataOcorrencia)}</td>
+                        <td>${r.cliente || '-'}</td>
+                        <td>${r.areaEnvolvida || '-'}</td>
+                        <td>${r.origem === 'Interno' ? '🏭 Interno' : '🌐 Externo'}</td>
+                        <td>${r.nfNfd || '-'}</td>
+                        <td style="max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${r.causaResumida || ''}">${r.causaResumida || '-'}</td>
+                        <td><span class="badge ${badgeClass}">${statusIcon} ${r.andamento}</span></td>
+                        <td>${formatarDuracao(tempoTotal)}</td>
+                        <td>${atrasosTexto}</td>
+                        <td>${formatarValor(bonif)}</td>
+                        <td>
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                <button class="btn btn-outline btn-sm" data-action="ver" data-idx="${idxReal}" title="Ver detalhes">👁️</button>
+                                <button class="btn btn-warning btn-sm" data-action="editar" data-idx="${idxReal}" title="Editar">✏️</button>
+                                <button class="btn btn-danger btn-sm" data-action="excluir" data-idx="${idxReal}" title="Excluir">🗑️</button>
+                            </div>
+                        </td>
+                    `;
+                    fragment.appendChild(tr);
+                });
+
+                tabelaHistorico.appendChild(fragment);
+            }
+
+            tabelaHistorico.addEventListener('click', (e) => {
+                const btn = e.target.closest('button[data-action]');
+                if (!btn) return;
+                const idx = parseInt(btn.dataset.idx, 10);
+                if (isNaN(idx)) return;
+                const action = btn.dataset.action;
+                if (action === 'ver') verDetalhes(idx);
+                else if (action === 'editar') editarRegistro(idx);
+                else if (action === 'excluir') excluirRegistro(idx);
+            });
+
+            // ========================================================
+            // DASHBOARD
+            // ========================================================
+            function filtrarRegistrosDashboard() {
+                const dataFiltro = dashFiltroData.value;
+                const mesFiltro = dashFiltroMes.value;
+                const areaFiltro = dashFiltroArea ? dashFiltroArea.value : '';
+                return registros.filter(r => {
+                    if (dataFiltro && r.dataOcorrencia !== dataFiltro) return false;
+                    if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
+                    if (areaFiltro && (r.areaEnvolvida || '') !== areaFiltro) return false;
+                    return true;
+                });
+            }
+
+            function destruirGraficos() {
+                if (chartArea) { chartArea.destroy(); chartArea = null; }
+                if (chartProdutos) { chartProdutos.destroy(); chartProdutos = null; }
+                if (chartMotivos) { chartMotivos.destroy(); chartMotivos = null; }
+                if (chartStatus) { chartStatus.destroy(); chartStatus = null; }
+                if (chartValoresProdutos) { chartValoresProdutos.destroy(); chartValoresProdutos = null; }
+                if (chartComparacaoValores) { chartComparacaoValores.destroy(); chartComparacaoValores = null; }
+                if (chartAtrasosProrrogacao) { chartAtrasosProrrogacao.destroy(); chartAtrasosProrrogacao = null; }
+                if (chartNfNfdArea) { chartNfNfdArea.destroy(); chartNfNfdArea = null; }
+            }
+
+            const BAR_DATALABELS = {
+                anchor: 'end',
+                align: 'end',
+                offset: 6,
+                clamp: true,
+                color: '#3C1053',
+                font: { weight: 'bold', size: 12 },
+                backgroundColor: 'rgba(255,255,255,0.85)',
+                borderRadius: 4,
+                padding: { top: 3, bottom: 3, left: 6, right: 6 }
+            };
+
+            function abreviarValor(v) {
+                v = Number(v) || 0;
+                if (Math.abs(v) >= 1000000) return (v / 1000000).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + 'M';
+                if (Math.abs(v) >= 1000) return (v / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'k';
+                return v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+            }
+
+            // ========================================================
+            // POPULAR LISTA POR RECLAMAÇÃO: ATRASOS / PRORROGAÇÃO
+            // ========================================================
+            function popularListaAtrasosProrrogacao(dados) {
+                if (!listaAtrasosProrrogacao) return;
+
+                const comValores = dados.filter(r => {
+                    const a = parseFloat(r.atrasosDias) || 0;
+                    const p = parseFloat(r.prorrogacao) || 0;
+                    return a > 0 || p > 0;
+                });
+
+                if (comValores.length === 0) {
+                    listaAtrasosProrrogacao.innerHTML =
+                        '<div class="lista-vazia">Nenhuma reclamação com atrasos ou prorrogação nos filtros selecionados.</div>';
+                    return;
+                }
+
+                comValores.sort((a, b) => {
+                    const aA = parseFloat(a.atrasosDias) || 0;
+                    const bA = parseFloat(b.atrasosDias) || 0;
+                    if (bA !== aA) return bA - aA;
+                    const aP = parseFloat(a.prorrogacao) || 0;
+                    const bP = parseFloat(b.prorrogacao) || 0;
+                    return bP - aP;
+                });
+
+                let totalAtrasos = 0;
+                let totalProrrog = 0;
+
+                let html = '<table class="tabela-atrasos-prorrogacao">';
+                html += '<thead><tr>';
+                html += '<th>Nº Reg.</th>';
+                html += '<th>Cliente</th>';
+                html += '<th>Área</th>';
+                html += '<th style="text-align:center;">Atrasos (dias)</th>';
+                html += '<th style="text-align:center;">Prorrog. (dias)</th>';
+                html += '</tr></thead><tbody>';
+
+                comValores.forEach(r => {
+                    const atrasos = parseFloat(r.atrasosDias) || 0;
+                    const prorrog = parseFloat(r.prorrogacao) || 0;
+                    totalAtrasos += atrasos;
+                    totalProrrog += prorrog;
+
+                    const clienteSafe = (r.cliente || '-').replace(/"/g, '&quot;');
+                    html += '<tr>';
+                    html += `<td><strong>#${r.numRegistro || '-'}</strong></td>`;
+                    html += `<td title="${clienteSafe}">${r.cliente || '-'}</td>`;
+                    html += `<td>${r.areaEnvolvida || '-'}</td>`;
+                    html += `<td style="text-align:center;" class="val-atrasos">${atrasos > 0 ? atrasos : '-'}</td>`;
+                    html += `<td style="text-align:center;" class="val-prorrog">${prorrog > 0 ? prorrog : '-'}</td>`;
+                    html += '</tr>';
+                });
+
+                html += '</tbody><tfoot><tr>';
+                html += `<td colspan="3" style="text-align:right;">TOTAIS (${comValores.length} reclamação(ões))</td>`;
+                html += `<td style="text-align:center;">${totalAtrasos}</td>`;
+                html += `<td style="text-align:center;">${totalProrrog}</td>`;
+                html += '</tr></tfoot></table>';
+
+                listaAtrasosProrrogacao.innerHTML = html;
+            }
+
+            function renderizarDashboard() {
+                destruirGraficos();
+                const dados = filtrarRegistrosDashboard();
+
+                // ---------- Gráfico: Ocorrência por Área ----------
+                const areaMap = new Map();
+                dados.forEach(r => {
+                    const area = r.areaEnvolvida || 'Não informada';
+                    areaMap.set(area, (areaMap.get(area) || 0) + 1);
+                });
+                const areaLabels = Array.from(areaMap.keys());
+                const areaValores = Array.from(areaMap.values());
+                if (areaLabels.length > 0) {
+                    const areaCores = [
+                        '#7C3AED', '#A78BFA', '#5B2A86', '#3C1053',
+                        '#F57C00', '#D32F2F', '#B8860B', '#1A6B9E',
+                        '#C0392B', '#1A0033', '#00897B', '#FF7043'
+                    ];
+                    chartArea = new Chart(canvasArea.getContext('2d'), {
+                        type: 'pie',
+                        data: {
+                            labels: areaLabels,
+                            datasets: [{
+                                label: 'Ocorrências',
+                                data: areaValores,
+                                backgroundColor: areaCores.slice(0, areaLabels.length),
+                                borderColor: '#FFFFFF',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            animation: false,
+                            layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } },
+                            plugins: {
+                                legend: { position: 'bottom', labels: { font: { size: 10 } } },
+                                datalabels: {
+                                    color: '#fff', font: { weight: 'bold', size: 14 },
+                                    formatter: (v) => v, anchor: 'center', align: 'center'
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // ---------- Gráfico: Quantidade Reclamada por Produto ----------
+                const produtoMap = new Map();
+                dados.forEach(r => {
+                    const nome = r.descricaoProduto || r.codItem || 'Sem identificação';
+                    const qtd = parseFloat(r.valorNFD) || 0;
+                    produtoMap.set(nome, (produtoMap.get(nome) || 0) + qtd);
+                });
+                const produtoLabels = Array.from(produtoMap.keys());
+                const produtoValores = Array.from(produtoMap.values());
+                if (produtoLabels.length > 0) {
+                    chartProdutos = new Chart(canvasProdutos.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: produtoLabels,
+                            datasets: [{
+                                label: 'Qtd. Reclamada',
+                                data: produtoValores,
+                                backgroundColor: '#A78BFA',
+                                borderColor: '#5B2A86',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: true, animation: false,
+                            layout: { padding: { top: 34, right: 10, left: 5, bottom: 5 } },
+                            plugins: {
+                                legend: { display: false },
+                                datalabels: { ...BAR_DATALABELS, formatter: (v) => abreviarValor(v) }
+                            },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { precision: 0 }, grace: '15%' }
+                            }
+                        }
+                    });
+                }
+
+                // ---------- Gráfico: Motivos de Ocorrência Resumida ----------
+                const motivoMap = new Map();
+                dados.forEach(r => {
+                    const motivo = r.causaResumida || 'Não informado';
+                    motivoMap.set(motivo, (motivoMap.get(motivo) || 0) + 1);
+                });
+                const motivoLabels = Array.from(motivoMap.keys());
+                const motivoValores = Array.from(motivoMap.values());
+                if (motivoLabels.length > 0) {
+                    chartMotivos = new Chart(canvasMotivos.getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: motivoLabels,
+                            datasets: [{
+                                label: 'Ocorrências',
+                                data: motivoValores,
+                                backgroundColor: [
+                                    '#7C3AED', '#A78BFA', '#5B2A86', '#3C1053',
+                                    '#F57C00', '#D32F2F', '#B8860B', '#1A6B9E',
+                                    '#C0392B', '#1A0033'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: true, animation: false,
+                            layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } },
+                            plugins: {
+                                legend: { position: 'bottom', labels: { font: { size: 10 } } },
+                                datalabels: {
+                                    color: '#fff', font: { weight: 'bold', size: 12 },
+                                    formatter: (v) => v, anchor: 'center', align: 'center'
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // ---------- Gráfico: Abertas vs Concluídas ----------
+                let abertas = 0, concluidas = 0;
+                dados.forEach(r => {
+                    if (r.andamento === 'Concluído') concluidas++;
+                    else abertas++;
+                });
+                chartStatus = new Chart(canvasStatus.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Abertas', 'Concluídas'],
+                        datasets: [{
+                            label: 'Quantidade',
+                            data: [abertas, concluidas],
+                            backgroundColor: ['#F57C00', '#3C1053'],
+                            borderColor: ['#E65100', '#1A0033'],
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: true, animation: false,
+                        layout: { padding: { top: 34, right: 10, left: 5, bottom: 5 } },
+                        plugins: {
+                            legend: { display: false },
+                            datalabels: { ...BAR_DATALABELS, font: { weight: 'bold', size: 14 }, formatter: (v) => v }
+                        },
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grace: '15%' } }
+                    }
+                });
+
+                // ---------- Gráfico: Bonificação por Produto ----------
+                const bonifMap = new Map();
+                dados.forEach(r => {
+                    const produto = r.descricaoProduto || r.codItem || 'Sem identificação';
+                    const valor = parseFloat(r.bonificacao) || 0;
+                    bonifMap.set(produto, (bonifMap.get(produto) || 0) + valor);
+                });
+                const bonifLabels = Array.from(bonifMap.keys());
+                const bonifValores = Array.from(bonifMap.values());
+                if (bonifLabels.length > 0) {
+                    chartValoresProdutos = new Chart(canvasValoresProdutos.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: bonifLabels,
+                            datasets: [{
+                                label: 'Bonificação (R$)',
+                                data: bonifValores,
+                                backgroundColor: '#3C1053',
+                                borderColor: '#1A0033',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: true, animation: false,
+                            layout: { padding: { top: 38, right: 12, left: 8, bottom: 5 } },
+                            plugins: {
+                                legend: { display: false },
+                                datalabels: { ...BAR_DATALABELS, font: { weight: 'bold', size: 11 }, formatter: (v) => abreviarValor(v) },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (ctx) => 'R$ ' + (ctx.raw || 0).toFixed(2).replace('.', ',')
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true, grace: '18%',
+                                    ticks: { callback: (v) => abreviarValor(v) }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // ---------- Gráfico: Comparação Qtd vs Bonificação ----------
+                let totalQtdReclamada = 0, totalBonif = 0;
+                dados.forEach(r => {
+                    totalQtdReclamada += parseFloat(r.valorNFD) || 0;
+                    totalBonif += parseFloat(r.bonificacao) || 0;
+                });
+                chartComparacaoValores = new Chart(canvasComparacaoValores.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Qtd. Reclamada', 'Bonificação'],
+                        datasets: [{
+                            label: 'Valores',
+                            data: [totalQtdReclamada, totalBonif],
+                            backgroundColor: ['#3C1053', '#7C3AED'],
+                            borderColor: ['#1A0033', '#5B2A86'],
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: true, animation: false,
+                        layout: { padding: { top: 38, right: 12, left: 8, bottom: 5 } },
+                        plugins: {
+                            legend: { display: false },
+                            datalabels: { ...BAR_DATALABELS, font: { weight: 'bold', size: 13 }, formatter: (v) => abreviarValor(v) },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => ctx.raw.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true, grace: '18%',
+                                ticks: { callback: (v) => abreviarValor(v) }
+                            }
+                        }
+                    }
+                });
+
+                // ========================================================
+                // GRÁFICO: Nf / Nfd por Área Envolvida (SOMA DOS VALORES)
+                // Soma os valores numéricos digitados no campo Nf / Nfd,
+                // agrupando por área envolvida. Aceita formatos como
+                // "150.41", "71.01", "6.372,28", "1952,57" e "493,45".
+                // ========================================================
+                const nfNfdPorArea = new Map();
+                let totalNfNfd = 0;
+                dados.forEach(r => {
+                    const valorNf = parseValorBR(r.nfNfd);
+                    if (valorNf === null || valorNf === 0) return; // ignora vazios ou zero
+                    const area = r.areaEnvolvida || 'Não informada';
+                    nfNfdPorArea.set(area, (nfNfdPorArea.get(area) || 0) + valorNf);
+                    totalNfNfd += valorNf;
+                });
+
+                const nfNfdLabels = Array.from(nfNfdPorArea.keys());
+                const nfNfdValores = Array.from(nfNfdPorArea.values());
+
+                if (nfNfdLabels.length > 0) {
+                    chartNfNfdArea = new Chart(canvasNfNfdArea.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: nfNfdLabels,
+                            datasets: [{
+                                label: 'Total Nf / Nfd (R$)',
+                                data: nfNfdValores,
+                                backgroundColor: '#00897B',
+                                borderColor: '#00695C',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: true, animation: false,
+                            layout: { padding: { top: 38, right: 12, left: 8, bottom: 5 } },
+                            plugins: {
+                                legend: { display: false },
+                                datalabels: {
+                                    ...BAR_DATALABELS,
+                                    font: { weight: 'bold', size: 11 },
+                                    formatter: (v) => abreviarValor(v)
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (ctx) => 'Total Nf/Nfd: R$ ' + formatarMoedaBR(ctx.raw)
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true, grace: '18%',
+                                    ticks: { callback: (v) => abreviarValor(v) }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    const ctx = canvasNfNfdArea.getContext('2d');
+                    ctx.clearRect(0, 0, canvasNfNfdArea.width, canvasNfNfdArea.height);
+                    ctx.fillStyle = '#5C5C8A';
+                    ctx.font = 'bold 13px Segoe UI, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Sem valores de Nf / Nfd nos filtros selecionados', canvasNfNfdArea.width / 2, canvasNfNfdArea.height / 2);
+                }
+
+                // ---------- Gráfico: Atrasos / Dias / Prorrogação (dias) ----------
+                const atrasosPorArea = new Map();
+                dados.forEach(r => {
+                    const area = r.areaEnvolvida || 'Não informada';
+                    if (!atrasosPorArea.has(area)) {
+                        atrasosPorArea.set(area, { atrasos: 0, prorrogacao: 0 });
+                    }
+                    const entry = atrasosPorArea.get(area);
+                    entry.atrasos += parseFloat(r.atrasosDias) || 0;
+                    entry.prorrogacao += parseFloat(r.prorrogacao) || 0;
+                });
+
+                const atrasosLabels = Array.from(atrasosPorArea.keys());
+                const atrasosValores = atrasosLabels.map(a => atrasosPorArea.get(a).atrasos);
+                const prorrogValores = atrasosLabels.map(a => atrasosPorArea.get(a).prorrogacao);
+
+                if (atrasosLabels.length > 0) {
+                    chartAtrasosProrrogacao = new Chart(canvasAtrasosProrrogacao.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: atrasosLabels,
+                            datasets: [
+                                {
+                                    label: 'Atrasos / Dias',
+                                    data: atrasosValores,
+                                    backgroundColor: '#E53935',
+                                    borderColor: '#B71C1C',
+                                    borderWidth: 1,
+                                    borderRadius: 6
+                                },
+                                {
+                                    label: 'Prorrogação (dias)',
+                                    data: prorrogValores,
+                                    backgroundColor: '#F57C00',
+                                    borderColor: '#E65100',
+                                    borderWidth: 1,
+                                    borderRadius: 6
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: true, animation: false,
+                            layout: { padding: { top: 38, right: 12, left: 8, bottom: 5 } },
+                            plugins: {
+                                legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 14 } },
+                                datalabels: {
+                                    ...BAR_DATALABELS,
+                                    font: { weight: 'bold', size: 10 },
+                                    formatter: (v) => v > 0 ? v : ''
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (ctx) => `${ctx.dataset.label}: ${ctx.raw} dia(s)`
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { precision: 0 }, grace: '18%' }
+                            }
+                        }
+                    });
+                } else {
+                    const ctx = canvasAtrasosProrrogacao.getContext('2d');
+                    ctx.clearRect(0, 0, canvasAtrasosProrrogacao.width, canvasAtrasosProrrogacao.height);
+                    ctx.fillStyle = '#5C5C8A';
+                    ctx.font = 'bold 13px Segoe UI, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Sem dados para os filtros selecionados', canvasAtrasosProrrogacao.width / 2, canvasAtrasosProrrogacao.height / 2);
+                }
+
+                // ---------- LISTA POR RECLAMAÇÃO: ATRASOS / PRORROGAÇÃO ----------
+                popularListaAtrasosProrrogacao(dados);
+            }
+
+            // ========================================================
+            // GERAR PDF
+            // ========================================================
+            async function gerarPDFDashboard() {
+                const originalText = btnGerarPDF.innerHTML;
+                btnGerarPDF.disabled = true;
+                btnGerarPDF.innerHTML = '<span class="loading-indicator"></span> Gerando...';
+
+                try {
+                    const dataFiltro = dashFiltroData.value;
+                    const mesFiltro = dashFiltroMes.value;
+                    const areaFiltro = dashFiltroArea ? dashFiltroArea.value : '';
+                    let filtroTexto = 'Todos os registros';
+                    if (dataFiltro && mesFiltro) {
+                        filtroTexto = `Dia: ${formatarData(dataFiltro)} · Mês: ${mesFiltro}`;
+                    } else if (dataFiltro) {
+                        filtroTexto = `Dia: ${formatarData(dataFiltro)}`;
+                    } else if (mesFiltro) {
+                        const [ano, mes] = mesFiltro.split('-');
+                        const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                                       'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+                        filtroTexto = `Mês: ${meses[parseInt(mes, 10) - 1]}/${ano}`;
+                    }
+                    if (areaFiltro) {
+                        filtroTexto += (filtroTexto === 'Todos os registros' ? '' : ' · ') + `Área: ${areaFiltro}`;
+                    }
+
+                    const dados = filtrarRegistrosDashboard();
+                    let totalPendentes = 0, totalConcluidos = 0, totalQtdReclamada = 0, totalBonificacao = 0, totalEmAtraso = 0;
+                    let totalNfNfd = 0;
+                    dados.forEach(r => {
+                        if (r.andamento === 'Concluído') totalConcluidos++;
+                        else {
+                            totalPendentes++;
+                            if (isAlertaPrazo(r)) totalEmAtraso++;
+                        }
+                        totalQtdReclamada += parseFloat(r.valorNFD) || 0;
+                        totalBonificacao += parseFloat(r.bonificacao) || 0;
+                        const vNf = parseValorBR(r.nfNfd);
+                        if (vNf !== null) totalNfNfd += vNf;
+                    });
+
+                    const agora = new Date();
+                    const dataGeracao = agora.toLocaleDateString('pt-BR') + ' às ' +
+                        agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+                    const container = document.createElement('div');
+                    container.style.position = 'fixed';
+                    container.style.left = '-99999px';
+                    container.style.top = '0';
+                    container.style.width = '1240px';
+                    container.style.background = '#ffffff';
+                    container.style.padding = '40px';
+                    container.style.fontFamily = "'Segoe UI', sans-serif";
+                    container.style.color = '#1A1A2E';
+                    container.style.boxSizing = 'border-box';
+
+                    container.innerHTML = `
+                        <div style="border-bottom: 4px solid #7C3AED; padding-bottom: 20px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 16px;">
+                                <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #3C1053 0%, #7C3AED 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 34px; color: #fff;">📦</div>
+                                <div>
+                                    <div style="font-size: 26px; font-weight: 800; color: #3C1053; letter-spacing: 0.5px;">DONA RITA EMBALAGENS</div>
+                                    <div style="font-size: 12px; font-weight: 700; color: #7C3AED; letter-spacing: 2px;">SAC · RELATÓRIO DO DASHBOARD</div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 11px; color: #5C5C8A; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Gerado em</div>
+                                <div style="font-size: 14px; font-weight: 700; color: #1A1A2E; margin-bottom: 6px;">${dataGeracao}</div>
+                                <div style="font-size: 11px; color: #5C5C8A; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Filtro Aplicado</div>
+                                <div style="font-size: 14px; font-weight: 700; color: #1A1A2E;">${filtroTexto}</div>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 25px;">
+                            <div style="background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
+                                <div style="font-size: 22px; font-weight: 800;">${dados.length}</div>
+                                <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Total Registros</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #E65100 0%, #F57C00 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
+                                <div style="font-size: 22px; font-weight: 800;">${totalPendentes}</div>
+                                <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Pendentes</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #388E3C 0%, #4CAF50 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
+                                <div style="font-size: 22px; font-weight: 800;">${totalConcluidos}</div>
+                                <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Concluídos</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
+                                <div style="font-size: 22px; font-weight: 800;">${totalQtdReclamada.toLocaleString('pt-BR')}</div>
+                                <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Qtd. Reclamada</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #1A0033 0%, #3C1053 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
+                                <div style="font-size: 16px; font-weight: 800;">R$ ${totalBonificacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                                <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Bonificação</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #00897B 0%, #4DB6AC 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
+                                <div style="font-size: 16px; font-weight: 800;">R$ ${formatarMoedaBR(totalNfNfd)}</div>
+                                <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Nf / Nfd</div>
+                            </div>
+                        </div>
+
+                        ${totalEmAtraso > 0 ? `
+                        <div style="background: linear-gradient(135deg, #FFF3F3 0%, #FFEBEE 100%); border: 2px solid #E53935; border-left: 8px solid #E53935; border-radius: 12px; padding: 16px 20px; margin-bottom: 25px; display: flex; align-items: center; gap: 16px;">
+                            <div style="width: 52px; height: 52px; background: linear-gradient(135deg, #E53935 0%, #FF6B6B 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; color: #fff; flex-shrink: 0;">⏰</div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 15px; font-weight: 800; color: #C62828; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">🚨 Alerta de Prazos</div>
+                                <div style="font-size: 13px; color: #B71C1C; font-weight: 600;">
+                                    Existem <strong style="color: #E53935; font-size: 16px;">${totalEmAtraso} reclamação(ões)</strong> com mais de ${DIAS_ALERTA_PRAZO} dias em aberto que precisam de atenção imediata.
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <div id="pdfChartsWrap" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"></div>
+                        <div style="margin-top: 24px; padding-top: 16px; border-top: 2px solid #E8EAF6; display: flex; justify-content: space-between; font-size: 10px; color: #5C5C8A;">
+                            <span>DONA RITA EMBALAGENS · Sistema SAC</span>
+                            <span>Relatório gerado automaticamente · ${dataGeracao}</span>
+                        </div>
+                    `;
+
+                    document.body.appendChild(container);
+                    const wrap = container.querySelector('#pdfChartsWrap');
+
+                    const origCharts = document.querySelectorAll('#chartsGridDashboard .chart-container');
+                    for (const chartBox of origCharts) {
+                        const isFull = chartBox.classList.contains('chart-container-full');
+
+                        const boxClone = document.createElement('div');
+                        boxClone.style.background = '#FAFAFE';
+                        boxClone.style.padding = '16px';
+                        boxClone.style.borderRadius = '12px';
+                        boxClone.style.border = '1.5px solid #C5CAE9';
+                        boxClone.style.boxSizing = 'border-box';
+                        boxClone.style.overflow = 'hidden';
+                        if (isFull) {
+                            boxClone.style.gridColumn = '1 / -1';
+                        }
+
+                        const titulo = chartBox.querySelector('h3');
+                        const tituloClone = document.createElement('div');
+                        tituloClone.style.fontSize = '13px';
+                        tituloClone.style.fontWeight = '800';
+                        tituloClone.style.color = '#3C1053';
+                        tituloClone.style.textAlign = 'center';
+                        tituloClone.style.textTransform = 'uppercase';
+                        tituloClone.style.letterSpacing = '0.8px';
+                        tituloClone.style.borderBottom = '1px solid #E8EAF6';
+                        tituloClone.style.paddingBottom = '8px';
+                        tituloClone.style.marginBottom = '12px';
+                        tituloClone.textContent = titulo ? titulo.textContent : '';
+                        boxClone.appendChild(tituloClone);
+
+                        const canvasOrig = chartBox.querySelector('canvas');
+                        if (canvasOrig) {
+                            const img = document.createElement('img');
+                            try {
+                                const tmpCanvas = document.createElement('canvas');
+                                tmpCanvas.width = canvasOrig.width;
+                                tmpCanvas.height = canvasOrig.height;
+                                const tctx = tmpCanvas.getContext('2d');
+                                tctx.fillStyle = '#FFFFFF';
+                                tctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+                                tctx.drawImage(canvasOrig, 0, 0);
+                                img.src = tmpCanvas.toDataURL('image/png');
+                            } catch (err) {
+                                img.src = canvasOrig.toDataURL('image/png');
+                            }
+                            img.style.width = '100%';
+                            img.style.height = 'auto';
+                            img.style.display = 'block';
+                            img.style.maxHeight = '300px';
+                            img.style.objectFit = 'contain';
+                            boxClone.appendChild(img);
+                        }
+
+                        const listaOrig = chartBox.querySelector('#listaAtrasosProrrogacao');
+                        if (listaOrig && listaOrig.innerHTML.trim() && !listaOrig.querySelector('.lista-vazia')) {
+                            const extraWrapper = document.createElement('div');
+                            extraWrapper.style.marginTop = '14px';
+                            extraWrapper.style.borderRadius = '8px';
+                            extraWrapper.style.border = '1px solid #C8B8E0';
+                            extraWrapper.style.overflow = 'hidden';
+                            extraWrapper.style.background = '#ffffff';
+
+                            const listaHeader = document.createElement('div');
+                            listaHeader.style.background = 'linear-gradient(135deg, #3C1053 0%, #5B2A86 100%)';
+                            listaHeader.style.color = '#fff';
+                            listaHeader.style.padding = '8px 12px';
+                            listaHeader.style.fontSize = '11px';
+                            listaHeader.style.fontWeight = '800';
+                            listaHeader.style.letterSpacing = '1px';
+                            listaHeader.style.textTransform = 'uppercase';
+                            listaHeader.textContent = '📋 Lista por Reclamação: Atrasos / Prorrogação';
+                            extraWrapper.appendChild(listaHeader);
+
+                            const listaConteudo = document.createElement('div');
+                            listaConteudo.innerHTML = listaOrig.innerHTML;
+                            listaConteudo.style.padding = '0';
+                            listaConteudo.style.maxHeight = 'none';
+                            listaConteudo.style.overflow = 'visible';
+
+                            extraWrapper.appendChild(listaConteudo);
+                            boxClone.appendChild(extraWrapper);
+                        }
+
+                        wrap.appendChild(boxClone);
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 400));
+
+                    const canvas = await html2canvas(container, {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: '#ffffff',
+                        logging: false,
+                        windowWidth: 1240
+                    });
+
+                    const imgData = canvas.toDataURL('image/png');
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    const margin = 8;
+                    const imgWidth = pageWidth - margin * 2;
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    const pageContentHeight = pageHeight - margin * 2;
+
+                    if (imgHeight <= pageContentHeight) {
+                        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+                    } else {
+                        const pageHeightPx = Math.floor((pageContentHeight / imgWidth) * canvas.width);
+                        const sliceCanvas = document.createElement('canvas');
+                        sliceCanvas.width = canvas.width;
+                        const sliceCtx = sliceCanvas.getContext('2d');
+                        let yOffset = 0;
+                        let pageNum = 0;
+
+                        while (yOffset < canvas.height) {
+                            const remaining = canvas.height - yOffset;
+                            const sliceH = Math.min(pageHeightPx, remaining);
+                            sliceCanvas.height = sliceH;
+                            sliceCtx.clearRect(0, 0, sliceCanvas.width, sliceH);
+                            sliceCtx.fillStyle = '#FFFFFF';
+                            sliceCtx.fillRect(0, 0, sliceCanvas.width, sliceH);
+                            sliceCtx.drawImage(canvas, 0, yOffset, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+
+                            const sliceImg = sliceCanvas.toDataURL('image/png');
+                            const sliceImgHeight = (sliceH * imgWidth) / canvas.width;
+                            if (pageNum > 0) pdf.addPage();
+                            pdf.addImage(sliceImg, 'PNG', margin, margin, imgWidth, sliceImgHeight);
+                            yOffset += sliceH;
+                            pageNum++;
+                        }
+                    }
+
+                    const sufixoData = dataFiltro || mesFiltro || 'Completo';
+                    const nomeArquivo = `Dashboard_SAC_${sufixoData}_${agora.toISOString().split('T')[0]}.pdf`;
+                    pdf.save(nomeArquivo);
+
+                    document.body.removeChild(container);
+                    mostrarToast('PDF do dashboard gerado com sucesso!', 'success');
+                } catch (err) {
+                    console.error('Erro ao gerar PDF:', err);
+                    mostrarToast('Erro ao gerar PDF. Tente novamente.', 'error');
+                    const leftover = document.querySelector('div[style*="-99999px"]');
+                    if (leftover && leftover.parentNode === document.body) document.body.removeChild(leftover);
+                } finally {
+                    btnGerarPDF.disabled = false;
+                    btnGerarPDF.innerHTML = originalText;
+                }
+            }
+
+            // ========================================================
+            // ABAS
+            // ========================================================
+            function alternarAba(tabId) {
+                tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
+                tabContents.forEach(content => content.classList.toggle('active', content.id === `tab-${tabId}`));
+                if (tabId === 'dashboard') renderizarDashboard();
+                if (tabId === 'historico') renderizarTabela();
+            }
+
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', () => alternarAba(btn.dataset.tab));
+            });
+
+            // ========================================================
+            // EVENTOS
+            // ========================================================
+            form.addEventListener('submit', salvarRegistro);
+
+            btnLimpar.addEventListener('click', () => {
+                limparFormulario();
+                mostrarToast('Formulário limpo!', 'warning');
+            });
+
+            btnLimparFiltros.addEventListener('click', () => {
+                filtroData.value = '';
+                filtroMes.value = '';
+                filtroBusca.value = '';
+                renderizarTabela();
+                mostrarToast('Filtros removidos!', 'warning');
+            });
+
+            const renderizarTabelaDebounced = debounce(renderizarTabela, 300);
+
+            filtroData.addEventListener('change', renderizarTabela);
+            filtroMes.addEventListener('change', renderizarTabela);
+            filtroBusca.addEventListener('input', renderizarTabelaDebounced);
+
+            dashFiltroData.addEventListener('change', renderizarDashboard);
+            dashFiltroMes.addEventListener('change', renderizarDashboard);
+            if (dashFiltroArea) {
+                dashFiltroArea.addEventListener('change', renderizarDashboard);
+            }
+
+            btnLimparFiltrosDash.addEventListener('click', () => {
+                dashFiltroData.value = '';
+                dashFiltroMes.value = '';
+                if (dashFiltroArea) dashFiltroArea.value = '';
+                renderizarDashboard();
+                mostrarToast('Filtros do dashboard removidos!', 'warning');
+            });
+
+            btnGerarPDF.addEventListener('click', gerarPDFDashboard);
+
+            // ========================================================
+            // AUTO-PREENCHIMENTO CÓDIGO ↔ DESCRIÇÃO
+            // ========================================================
+            codItemInput.addEventListener('input', function() {
+                const codigoDigitado = normalizarTexto(this.value);
+                if (codigoDigitado && mapaCodigoParaDescricao[codigoDigitado]) {
+                    descricaoProdutoInput.value = mapaCodigoParaDescricao[codigoDigitado];
+                } else {
+                    const descricaoAtual = descricaoProdutoInput.value.trim();
+                    if (descricaoAtual && mapaDescricaoParaCodigo[normalizarTexto(descricaoAtual)] &&
+                        codigoDigitado !== mapaDescricaoParaCodigo[normalizarTexto(descricaoAtual)]) {
+                        descricaoProdutoInput.value = '';
+                    }
+                }
+            });
+
+            descricaoProdutoInput.addEventListener('input', function() {
+                const descricaoDigitada = normalizarTexto(this.value);
+                if (descricaoDigitada && mapaDescricaoParaCodigo[descricaoDigitada]) {
+                    codItemInput.value = mapaDescricaoParaCodigo[descricaoDigitada];
+                } else {
+                    const codigoAtual = codItemInput.value.trim();
+                    if (codigoAtual && mapaCodigoParaDescricao[codigoAtual] &&
+                        descricaoDigitada !== mapaCodigoParaDescricao[codigoAtual]) {
+                        codItemInput.value = '';
+                    }
+                }
+            });
+
+            modalClose.addEventListener('click', fecharModal);
+            btnFecharModal.addEventListener('click', fecharModal);
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) fecharModal();
+            });
+
+            btnEditarDoModal.addEventListener('click', () => {
+                if (registroSelecionado) {
+                    const idx = registros.indexOf(registroSelecionado);
+                    if (idx !== -1) editarRegistro(idx);
+                }
+            });
+
+            btnExcluirDoModal.addEventListener('click', () => {
+                if (registroSelecionado) {
+                    const idx = registros.indexOf(registroSelecionado);
+                    if (idx !== -1) excluirRegistro(idx);
+                }
+            });
+
+            // ========================================================
+            // INICIALIZAÇÃO
+            // ========================================================
+            async function iniciar() {
+                mostrarLoadingGlobal(true, 'Carregando dados do Firebase...');
+                try {
+                    preencherDatalistDescricao();
+                    await carregarRegistrosDoFirebase();
+                    atualizarStats();
+
+                    dataOcorrenciaInput.value = new Date().toISOString().split('T')[0];
+                    setOrigemSelecionada('Interno');
+                    popularSelectAndamento(false);
+
+                    renderizarTabela();
+                    renderizarDashboard();
+                    alternarAba('registro');
+
+                    console.log('✅ Sistema SAC Dona Rita Embalagens carregado!');
+                    console.log(`📦 ${registros.length} registro(s) carregado(s).`);
+
+                    if (registros.length >= LIMITE_REGISTROS) {
+                        mostrarToast(`Limite de ${LIMITE_REGISTROS} registros atingido. Considere arquivar antigos.`, 'warning');
+                    }
+
+                    const emAtraso = registros.filter(r => isAlertaPrazo(r)).length;
+                    if (emAtraso > 0) {
+                        setTimeout(() => {
+                            mostrarToast(`🚨 ${emAtraso} reclamação(ões) com mais de ${DIAS_ALERTA_PRAZO} dias em aberto. Verifique!`, 'alert-prazo');
+                        }, 800);
+                    }
+                } catch (e) {
+                    console.error('❌ Erro ao carregar do Firebase:', e);
+                    let msg = 'Erro ao carregar dados do Firebase! Verifique sua conexão.';
+                    if (e && e.code === 'permission-denied') {
+                        msg = 'Permissão negada. Verifique as regras de segurança do Firestore.';
+                    }
+                    mostrarToast(msg, 'error');
+                    registros = [];
+                    atualizarStats();
+                    renderizarTabela();
+                    renderizarDashboard();
+                } finally {
+                    mostrarLoadingGlobal(false);
+                }
+            }
+
+            iniciar();
+        })();
+    </script>
+</body>
+</html>
