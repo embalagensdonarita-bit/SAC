@@ -141,6 +141,12 @@
             0%, 100% { box-shadow: 0 4px 15px rgba(124, 58, 237, 0.5); }
             50% { box-shadow: 0 4px 30px rgba(124, 58, 237, 0.8); }
         }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
         .header-stats { display: flex; gap: 10px; flex-wrap: wrap; }
         .stat-badge {
             background: rgba(255, 255, 255, 0.1);
@@ -183,6 +189,45 @@
                 box-shadow: 0 0 0 10px rgba(244, 67, 54, 0),
                             0 10px 30px rgba(0, 0, 0, 0.3);
             }
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 14px;
+            border-radius: 12px;
+            border: 1.5px solid rgba(255,255,255,0.18);
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 700;
+            backdrop-filter: blur(12px);
+        }
+        .user-info .user-role {
+            font-size: 0.62rem;
+            background: rgba(255,255,255,0.22);
+            padding: 3px 9px;
+            border-radius: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+        .btn-logout {
+            background: rgba(255,255,255,0.15);
+            border: 1.5px solid rgba(255,255,255,0.25);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 700;
+            transition: var(--transition);
+            font-family: var(--font);
+        }
+        .btn-logout:hover {
+            background: rgba(220, 30, 30, 0.4);
+            border-color: rgba(255, 120, 120, 0.6);
+            transform: translateY(-1px);
         }
         .container {
             max-width: 100%; width: 100%;
@@ -896,11 +941,129 @@
         .toast.error { background: linear-gradient(135deg, #B71C1C 0%, #D32F2F 100%); }
         .toast.warning { background: linear-gradient(135deg, #E65100 0%, #F57C00 100%); }
         .toast.alert-prazo { background: linear-gradient(135deg, #B71C1C 0%, #E53935 100%); }
+
+        /* ===== LOGIN ===== */
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            background-image: var(--bg-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
+            padding: 20px;
+        }
+        .login-overlay::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 30%, rgba(124, 58, 237, 0.25) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(139, 92, 246, 0.2) 0%, transparent 50%);
+            animation: bgFloat 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .login-overlay.hidden { display: none; }
+        .login-box {
+            position: relative;
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 40px 32px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            border: 3px solid transparent;
+            border-image: linear-gradient(135deg, #3C1053 0%, #7C3AED 100%) 1;
+            animation: modalSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, #3C1053 0%, #7C3AED 100%);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            color: #fff;
+            box-shadow: 0 10px 30px rgba(124, 58, 237, 0.5);
+            animation: iconPulse 3s ease-in-out infinite;
+        }
+        .login-box h2 {
+            font-size: 1.3rem;
+            color: #3C1053;
+            font-weight: 800;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+        .login-box .login-subtitle {
+            color: #7C3AED;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            font-family: var(--font);
+            margin-bottom: 12px;
+            outline: none;
+            transition: var(--transition);
+            background: #FAFAFE;
+            color: var(--text);
+        }
+        .login-box input:focus {
+            border-color: #5B2A86;
+            background: #fff;
+            box-shadow: 0 0 0 5px rgba(91, 42, 134, 0.15);
+        }
+        .login-btn {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, #3C1053 0%, #7C3AED 100%);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.5px;
+            font-family: var(--font);
+            margin-top: 4px;
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(60, 16, 83, 0.5);
+        }
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .login-error {
+            color: #D32F2F;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-top: 12px;
+            min-height: 20px;
+        }
+
+        .user-row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
         @media (max-width: 768px) {
             .header-inner { padding: 12px 14px; flex-direction: column; text-align: center; gap: 8px; }
             .logo-area { flex-direction: column; gap: 6px; }
             .logo-text h1 { font-size: 1.05rem; white-space: normal; }
             .header-stats { gap: 6px; justify-content: center; }
+            .header-right { flex-direction: column; gap: 8px; }
             .stat-badge { padding: 6px 10px; min-width: 60px; }
             .stat-badge .stat-value { font-size: 1rem; }
             .container { padding: 14px 10px; }
@@ -972,6 +1135,21 @@
 </head>
 <body>
 
+    <!-- ============ TELA DE LOGIN ============ -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <div class="login-logo">📦</div>
+            <h2>DONA RITA EMBALAGENS</h2>
+            <div class="login-subtitle">Sistema SAC · Acesso Restrito</div>
+            <form id="formLogin" autocomplete="off">
+                <input type="text" id="loginUser" placeholder="Usuário" required>
+                <input type="password" id="loginPass" placeholder="Senha" required>
+                <button type="submit" class="login-btn" id="loginBtn">🔓 Entrar</button>
+                <div class="login-error" id="loginError"></div>
+            </form>
+        </div>
+    </div>
+
     <div class="global-loading" id="globalLoading">
         <div class="spinner"></div>
         <div class="txt">Carregando dados do Firebase...</div>
@@ -986,23 +1164,30 @@
                     <span class="sac-badge">SAC</span>
                 </div>
             </div>
-            <div class="header-stats">
-                <div class="stat-badge">
-                    <div class="stat-value" id="statTotal">0</div>
-                    <div class="stat-label">Registros</div>
+            <div class="header-right">
+                <div class="header-stats">
+                    <div class="stat-badge">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">Registros</div>
+                    </div>
+                    <div class="stat-badge">
+                        <div class="stat-value" id="statPendentes">0</div>
+                        <div class="stat-label">Pendentes</div>
+                    </div>
+                    <div class="stat-badge">
+                        <div class="stat-value" id="statConcluidos">0</div>
+                        <div class="stat-label">Concluídos</div>
+                    </div>
+                    <div class="stat-badge stat-alerta" id="statAlertaBadge" title="Reclamações abertas há 10 dias ou mais" style="display: none;">
+                        <div class="stat-value" id="statEmAtraso">0</div>
+                        <div class="stat-label">⚠️ Em Atraso</div>
+                    </div>
                 </div>
-                <div class="stat-badge">
-                    <div class="stat-value" id="statPendentes">0</div>
-                    <div class="stat-label">Pendentes</div>
+                <div class="user-info" id="userInfo">
+                    <span>👤 -</span>
+                    <span class="user-role">-</span>
                 </div>
-                <div class="stat-badge">
-                    <div class="stat-value" id="statConcluidos">0</div>
-                    <div class="stat-label">Concluídos</div>
-                </div>
-                <div class="stat-badge stat-alerta" id="statAlertaBadge" title="Reclamações abertas há 10 dias ou mais" style="display: none;">
-                    <div class="stat-value" id="statEmAtraso">0</div>
-                    <div class="stat-label">⚠️ Em Atraso</div>
-                </div>
+                <button class="btn-logout" id="btnLogout" title="Sair do sistema">🚪 Sair</button>
             </div>
         </div>
     </header>
@@ -1013,6 +1198,7 @@
             <button class="tab-btn active" data-tab="registro">📝 Registro</button>
             <button class="tab-btn" data-tab="historico">📋 Histórico</button>
             <button class="tab-btn" data-tab="dashboard">📊 Dashboard</button>
+            <button class="tab-btn" data-tab="usuarios" id="tabBtnUsuarios">👥 Usuários</button>
         </div>
 
         <!-- ===== ABA: REGISTRO ===== -->
@@ -1264,17 +1450,67 @@
                         <h3>Comparação Quantidade Reclamada vs Bonificação</h3>
                         <canvas id="graficoComparacaoValores"></canvas>
                     </div>
-                    <!-- ===== GRÁFICO: Nf / Nfd por Área Envolvida (SOMA DOS VALORES) ===== -->
                     <div class="chart-container">
                         <h3>Nf / Nfd por Área Envolvida (Valores R$)</h3>
                         <canvas id="graficoNfNfdArea"></canvas>
                     </div>
-                    <!-- ===== GRÁFICO + LISTA: ATRASOS / PRORROGAÇÃO ===== -->
                     <div class="chart-container chart-container-full">
-                        <h3>Atrasos / Dias / Prorrogação (dias)</h3>
+                        <h3>Atrasos / Dias / Prorrogação (dias) - Logística</h3>
                         <canvas id="graficoAtrasosProrrogacao"></canvas>
                         <div id="listaAtrasosProrrogacao" class="lista-atrasos-prorrogacao"></div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ABA: USUÁRIOS (ADMIN) ===== -->
+        <div class="tab-content" id="tab-usuarios">
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon">👥</span> Gerenciar Usuários do Sistema
+                </div>
+                <form id="formUsuario" autocomplete="off">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Usuário <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="userUsername" placeholder="Nome de usuário" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Senha <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="userPassword" placeholder="Senha de acesso" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tipo de Usuário <span class="required">*</span></label>
+                            <select class="form-select" id="userTipo" required>
+                                <option value="padrao">👤 Padrão (somente visualização)</option>
+                                <option value="admin">👑 Administrador (acesso total)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-success" id="btnSalvarUsuario">
+                                ➕ Criar Usuário
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="table-wrapper" style="margin-top: 24px; max-height: 500px;">
+                    <table class="table" style="min-width: auto;">
+                        <thead>
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaUsuarios"></tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 16px; padding: 14px 16px; background: #FFF8E1; border-left: 5px solid #F57C00; border-radius: 10px; font-size: 0.82rem; color: #8B5A00; font-weight: 600;">
+                    ℹ️ <strong>Observação:</strong> Usuários do tipo <strong>Padrão</strong> conseguem visualizar apenas as abas <strong>Histórico</strong> e <strong>Dashboard</strong>, e <strong>não</strong> podem gerar PDF. Apenas administradores podem criar/editar/excluir registros e gerenciar usuários.
                 </div>
             </div>
         </div>
@@ -1327,8 +1563,12 @@
             });
 
             const COLLECTION_NAME = 'registros';
+            const USERS_COLLECTION = 'usuarios';
             const LIMITE_REGISTROS = 2000;
             const DIAS_ALERTA_PRAZO = 10;
+
+            // Admin fixo hardcoded
+            const ADMIN_FIXO = { username: 'Duda', password: '1304', tipo: 'admin' };
 
             Chart.register(ChartDataLabels);
 
@@ -1336,9 +1576,11 @@
             // ESTADO
             // ========================================================
             let registros = [];
+            let usuarios = [];
             let registroEmEdicao = null;
             let registroSelecionado = null;
             let isLoading = false;
+            let currentUser = null;
 
             let chartArea = null;
             let chartProdutos = null;
@@ -1419,6 +1661,22 @@
 
             const tabButtons = document.querySelectorAll('.tab-btn');
             const tabContents = document.querySelectorAll('.tab-content');
+
+            const loginOverlay = $('loginOverlay');
+            const formLogin = $('formLogin');
+            const loginUser = $('loginUser');
+            const loginPass = $('loginPass');
+            const loginError = $('loginError');
+            const loginBtn = $('loginBtn');
+            const btnLogout = $('btnLogout');
+            const userInfo = $('userInfo');
+
+            const formUsuario = $('formUsuario');
+            const userUsername = $('userUsername');
+            const userPassword = $('userPassword');
+            const userTipo = $('userTipo');
+            const tabelaUsuarios = $('tabelaUsuarios');
+            const tabBtnUsuarios = $('tabBtnUsuarios');
 
             // ========================================================
             // LISTA DE PRODUTOS
@@ -1527,6 +1785,258 @@
                 mapaCodigoParaDescricao[codigo] = descricao;
                 mapaDescricaoParaCodigo[descricao] = codigo;
             });
+
+            // ========================================================
+            // AUTENTICAÇÃO
+            // ========================================================
+            function isAdmin() {
+                return !!(currentUser && currentUser.tipo === 'admin');
+            }
+
+            function podeEditar() {
+                return isAdmin();
+            }
+
+            async function validarCredenciais(username, password) {
+                // Admin hardcoded
+                if (username === ADMIN_FIXO.username && password === ADMIN_FIXO.password) {
+                    return { username: ADMIN_FIXO.username, tipo: 'admin', isHardcoded: true };
+                }
+                // Buscar usuários no Firestore
+                try {
+                    const snap = await db.collection(USERS_COLLECTION)
+                        .where('username', '==', username)
+                        .get();
+                    for (const doc of snap.docs) {
+                        const data = doc.data();
+                        if (data.password === password) {
+                            return { docId: doc.id, username: data.username, tipo: data.tipo || 'padrao' };
+                        }
+                    }
+                } catch (err) {
+                    console.error('Erro ao validar credenciais:', err);
+                }
+                return null;
+            }
+
+            async function carregarUsuariosDoFirebase() {
+                try {
+                    const snap = await db.collection(USERS_COLLECTION).get();
+                    usuarios = snap.docs.map(d => {
+                        const data = d.data();
+                        data.docId = d.id;
+                        return data;
+                    });
+                } catch (err) {
+                    console.warn('Não foi possível carregar usuários:', err);
+                    usuarios = [];
+                }
+            }
+
+            function renderizarUsuarios() {
+                if (!tabelaUsuarios) return;
+                tabelaUsuarios.innerHTML = '';
+
+                // Admin fixo (não pode ser removido)
+                const trAdmin = document.createElement('tr');
+                trAdmin.innerHTML = `
+                    <td><strong>👑 Duda</strong> <span style="color:#5C5C8A; font-size: 0.7rem;">(admin fixo)</span></td>
+                    <td><span class="badge badge-concluido">👑 Administrador</span></td>
+                    <td><span style="color:#2E7D32; font-weight:700;">✅ Ativo</span></td>
+                    <td><em style="color:#5C5C8A; font-size: 0.78rem;">🔒 Protegido</em></td>
+                `;
+                tabelaUsuarios.appendChild(trAdmin);
+
+                if (usuarios.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td colspan="4" style="text-align:center; padding: 20px; color:#5C5C8A; font-style: italic;">Nenhum usuário adicional cadastrado.</td>`;
+                    tabelaUsuarios.appendChild(tr);
+                    return;
+                }
+
+                usuarios.forEach(u => {
+                    const tr = document.createElement('tr');
+                    const isAdm = u.tipo === 'admin';
+                    tr.innerHTML = `
+                        <td><strong>👤 ${u.username}</strong></td>
+                        <td><span class="badge ${isAdm ? 'badge-concluido' : 'badge-abertura'}">${isAdm ? '👑 Administrador' : '👤 Padrão'}</span></td>
+                        <td><span style="color:#2E7D32; font-weight:700;">✅ Ativo</span></td>
+                        <td>
+                            <div class="user-row-actions">
+                                <button class="btn btn-danger btn-sm" data-del-user="${u.docId}" title="Excluir usuário">🗑️ Excluir</button>
+                            </div>
+                        </td>
+                    `;
+                    tabelaUsuarios.appendChild(tr);
+                });
+            }
+
+            function aplicarPermissoes() {
+                if (!currentUser) return;
+                const adm = isAdmin();
+
+                // Mostrar/ocultar abas restritas
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    const tab = btn.dataset.tab;
+                    if (tab === 'registro' || tab === 'usuarios') {
+                        btn.style.display = adm ? '' : 'none';
+                    }
+                });
+
+                // Botão PDF
+                if (btnGerarPDF) {
+                    btnGerarPDF.style.display = adm ? '' : 'none';
+                }
+
+                // Info do usuário
+                if (userInfo) {
+                    userInfo.innerHTML = `
+                        <span>👤 ${currentUser.username}</span>
+                        <span class="user-role">${adm ? '👑 Admin' : 'Padrão'}</span>
+                    `;
+                }
+
+                // Se não é admin, garantir que está em uma aba permitida
+                if (!adm) {
+                    const activeTab = document.querySelector('.tab-btn.active');
+                    if (activeTab && (activeTab.dataset.tab === 'registro' || activeTab.dataset.tab === 'usuarios')) {
+                        alternarAba('historico');
+                    }
+                }
+
+                // Re-render tabela para esconder/mostrar ações
+                renderizarTabela();
+            }
+
+            function finalizarLogin() {
+                loginOverlay.classList.add('hidden');
+                aplicarPermissoes();
+                if (isAdmin()) {
+                    carregarUsuariosDoFirebase().then(renderizarUsuarios);
+                }
+                mostrarToast(`Bem-vindo(a), ${currentUser.username}!`, 'success');
+            }
+
+            async function processarLogin(e) {
+                e.preventDefault();
+                const username = loginUser.value.trim();
+                const password = loginPass.value;
+
+                loginError.textContent = '';
+                if (!username || !password) {
+                    loginError.textContent = 'Preencha usuário e senha.';
+                    return;
+                }
+
+                loginBtn.disabled = true;
+                loginBtn.innerHTML = '<span class="loading-indicator"></span> Validando...';
+
+                try {
+                    const user = await validarCredenciais(username, password);
+                    if (!user) {
+                        loginError.textContent = '❌ Usuário ou senha inválidos.';
+                        loginPass.value = '';
+                        loginPass.focus();
+                        return;
+                    }
+
+                    currentUser = user;
+                    try {
+                        sessionStorage.setItem('sac_session', JSON.stringify(user));
+                    } catch (err) { /* ignora */ }
+
+                    loginUser.value = '';
+                    loginPass.value = '';
+                    finalizarLogin();
+                } catch (err) {
+                    console.error('Erro no login:', err);
+                    loginError.textContent = 'Erro ao validar login. Tente novamente.';
+                } finally {
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = '🔓 Entrar';
+                }
+            }
+
+            function fazerLogout() {
+                if (!confirm('Deseja sair do sistema?')) return;
+                currentUser = null;
+                try { sessionStorage.removeItem('sac_session'); } catch (err) { /* ignora */ }
+                loginOverlay.classList.remove('hidden');
+                loginUser.value = '';
+                loginPass.value = '';
+                loginError.textContent = '';
+                loginUser.focus();
+                // Reset abas visíveis
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.style.display = '';
+                });
+                if (btnGerarPDF) btnGerarPDF.style.display = '';
+                alternarAba('registro');
+            }
+
+            // ========================================================
+            // CRUD DE USUÁRIOS
+            // ========================================================
+            async function salvarUsuario(e) {
+                e.preventDefault();
+                if (!isAdmin()) {
+                    mostrarToast('Apenas administradores podem criar usuários.', 'error');
+                    return;
+                }
+                const username = userUsername.value.trim();
+                const password = userPassword.value.trim();
+                const tipo = userTipo.value;
+
+                if (!username || !password) {
+                    mostrarToast('Preencha usuário e senha.', 'error');
+                    return;
+                }
+                if (username.toLowerCase() === ADMIN_FIXO.username.toLowerCase()) {
+                    mostrarToast('Este nome de usuário é reservado.', 'error');
+                    return;
+                }
+                if (usuarios.some(u => (u.username || '').toLowerCase() === username.toLowerCase())) {
+                    mostrarToast('Já existe um usuário com esse nome.', 'error');
+                    return;
+                }
+
+                try {
+                    const novo = { username, password, tipo, createdAt: new Date().toISOString() };
+                    const ref = await db.collection(USERS_COLLECTION).add(novo);
+                    usuarios.push({ ...novo, docId: ref.id });
+                    renderizarUsuarios();
+                    formUsuario.reset();
+                    userTipo.value = 'padrao';
+                    mostrarToast(`Usuário "${username}" criado com sucesso!`, 'success');
+                } catch (err) {
+                    console.error('Erro ao criar usuário:', err);
+                    mostrarToast('Erro ao criar usuário. Verifique as regras do Firestore.', 'error');
+                }
+            }
+
+            async function excluirUsuario(docId) {
+                if (!isAdmin()) return;
+                const u = usuarios.find(x => x.docId === docId);
+                if (!u) return;
+                if (!confirm(`Excluir o usuário "${u.username}"?`)) return;
+                try {
+                    await db.collection(USERS_COLLECTION).doc(docId).delete();
+                    usuarios = usuarios.filter(x => x.docId !== docId);
+                    renderizarUsuarios();
+                    mostrarToast(`Usuário "${u.username}" excluído.`, 'success');
+                } catch (err) {
+                    console.error('Erro ao excluir usuário:', err);
+                    mostrarToast('Erro ao excluir usuário.', 'error');
+                }
+            }
+
+            if (tabelaUsuarios) {
+                tabelaUsuarios.addEventListener('click', (e) => {
+                    const btn = e.target.closest('button[data-del-user]');
+                    if (!btn) return;
+                    excluirUsuario(btn.dataset.delUser);
+                });
+            }
 
             // ========================================================
             // UTILITÁRIOS
@@ -1758,7 +2268,7 @@
             }
 
             // ========================================================
-            // CRUD
+            // CRUD REGISTROS
             // ========================================================
             function atualizarStats() {
                 statTotal.textContent = registros.length;
@@ -1911,6 +2421,10 @@
 
             async function salvarRegistro(e) {
                 e.preventDefault();
+                if (!isAdmin()) {
+                    mostrarToast('Apenas administradores podem salvar registros.', 'error');
+                    return;
+                }
                 if (isLoading) return;
 
                 const dados = coletarDadosFormulario();
@@ -1994,6 +2508,10 @@
             }
 
             async function excluirRegistro(indiceReal) {
+                if (!isAdmin()) {
+                    mostrarToast('Apenas administradores podem excluir registros.', 'error');
+                    return;
+                }
                 const registro = registros[indiceReal];
                 if (!registro) return;
                 if (!confirm(`Tem certeza que deseja excluir o registro #${registro.numRegistro} do cliente ${registro.cliente}?`)) return;
@@ -2014,6 +2532,10 @@
             }
 
             function editarRegistro(indiceReal) {
+                if (!isAdmin()) {
+                    mostrarToast('Apenas administradores podem editar registros.', 'error');
+                    return;
+                }
                 const registro = registros[indiceReal];
                 if (!registro) return;
                 registroEmEdicao = registro;
@@ -2118,6 +2640,10 @@
                     <div class="modal-detail-item full"><div class="label">Histórico de Etapas</div><div class="value">${htmlTimeline || 'Sem histórico'}</div></div>
                 `;
 
+                // Mostrar/ocultar botões de ação do modal conforme permissão
+                btnEditarDoModal.style.display = isAdmin() ? '' : 'none';
+                btnExcluirDoModal.style.display = isAdmin() ? '' : 'none';
+
                 modalOverlay.classList.add('active');
             }
 
@@ -2162,6 +2688,7 @@
                 if (tbl) tbl.style.display = 'table';
 
                 const fragment = document.createDocumentFragment();
+                const adm = isAdmin();
 
                 filtrados.forEach((r) => {
                     const idxReal = registros.indexOf(r);
@@ -2186,6 +2713,14 @@
                     const atrasosTexto = (r.atrasosDias !== null && r.atrasosDias !== undefined)
                         ? `${r.atrasosDias} dia(s)` : '-';
 
+                    let acoesHTML = `<button class="btn btn-outline btn-sm" data-action="ver" data-idx="${idxReal}" title="Ver detalhes">👁️</button>`;
+                    if (adm) {
+                        acoesHTML += `
+                            <button class="btn btn-warning btn-sm" data-action="editar" data-idx="${idxReal}" title="Editar">✏️</button>
+                            <button class="btn btn-danger btn-sm" data-action="excluir" data-idx="${idxReal}" title="Excluir">🗑️</button>
+                        `;
+                    }
+
                     tr.innerHTML = `
                         <td>
                             <strong>#${r.numRegistro}</strong>
@@ -2203,9 +2738,7 @@
                         <td>${formatarValor(bonif)}</td>
                         <td>
                             <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                                <button class="btn btn-outline btn-sm" data-action="ver" data-idx="${idxReal}" title="Ver detalhes">👁️</button>
-                                <button class="btn btn-warning btn-sm" data-action="editar" data-idx="${idxReal}" title="Editar">✏️</button>
-                                <button class="btn btn-danger btn-sm" data-action="excluir" data-idx="${idxReal}" title="Excluir">🗑️</button>
+                                ${acoesHTML}
                             </div>
                         </td>
                     `;
@@ -2272,12 +2805,15 @@
             }
 
             // ========================================================
-            // POPULAR LISTA POR RECLAMAÇÃO: ATRASOS / PRORROGAÇÃO
+            // LISTA: ATRASOS / PRORROGAÇÃO - SOMENTE LOGÍSTICA
             // ========================================================
             function popularListaAtrasosProrrogacao(dados) {
                 if (!listaAtrasosProrrogacao) return;
 
-                const comValores = dados.filter(r => {
+                // Filtra apenas Logística
+                const dadosLogistica = dados.filter(r => (r.areaEnvolvida || '').trim() === 'Logística');
+
+                const comValores = dadosLogistica.filter(r => {
                     const a = parseFloat(r.atrasosDias) || 0;
                     const p = parseFloat(r.prorrogacao) || 0;
                     return a > 0 || p > 0;
@@ -2285,7 +2821,7 @@
 
                 if (comValores.length === 0) {
                     listaAtrasosProrrogacao.innerHTML =
-                        '<div class="lista-vazia">Nenhuma reclamação com atrasos ou prorrogação nos filtros selecionados.</div>';
+                        '<div class="lista-vazia">Nenhuma reclamação da Logística com atrasos ou prorrogação nos filtros selecionados.</div>';
                     return;
                 }
 
@@ -2571,17 +3107,12 @@
                     }
                 });
 
-                // ========================================================
-                // GRÁFICO: Nf / Nfd por Área Envolvida (SOMA DOS VALORES)
-                // Soma os valores numéricos digitados no campo Nf / Nfd,
-                // agrupando por área envolvida. Aceita formatos como
-                // "150.41", "71.01", "6.372,28", "1952,57" e "493,45".
-                // ========================================================
+                // ---------- Gráfico: Nf / Nfd por Área ----------
                 const nfNfdPorArea = new Map();
                 let totalNfNfd = 0;
                 dados.forEach(r => {
                     const valorNf = parseValorBR(r.nfNfd);
-                    if (valorNf === null || valorNf === 0) return; // ignora vazios ou zero
+                    if (valorNf === null || valorNf === 0) return;
                     const area = r.areaEnvolvida || 'Não informada';
                     nfNfdPorArea.set(area, (nfNfdPorArea.get(area) || 0) + valorNf);
                     totalNfNfd += valorNf;
@@ -2637,10 +3168,12 @@
                     ctx.fillText('Sem valores de Nf / Nfd nos filtros selecionados', canvasNfNfdArea.width / 2, canvasNfNfdArea.height / 2);
                 }
 
-                // ---------- Gráfico: Atrasos / Dias / Prorrogação (dias) ----------
+                // ---------- Gráfico: Atrasos / Dias / Prorrogação (SOMENTE LOGÍSTICA) ----------
                 const atrasosPorArea = new Map();
                 dados.forEach(r => {
-                    const area = r.areaEnvolvida || 'Não informada';
+                    // Filtra somente Logística
+                    if ((r.areaEnvolvida || '').trim() !== 'Logística') return;
+                    const area = 'Logística';
                     if (!atrasosPorArea.has(area)) {
                         atrasosPorArea.set(area, { atrasos: 0, prorrogacao: 0 });
                     }
@@ -2704,10 +3237,10 @@
                     ctx.fillStyle = '#5C5C8A';
                     ctx.font = 'bold 13px Segoe UI, sans-serif';
                     ctx.textAlign = 'center';
-                    ctx.fillText('Sem dados para os filtros selecionados', canvasAtrasosProrrogacao.width / 2, canvasAtrasosProrrogacao.height / 2);
+                    ctx.fillText('Sem dados da Logística para os filtros selecionados', canvasAtrasosProrrogacao.width / 2, canvasAtrasosProrrogacao.height / 2);
                 }
 
-                // ---------- LISTA POR RECLAMAÇÃO: ATRASOS / PRORROGAÇÃO ----------
+                // ---------- LISTA: ATRASOS / PRORROGAÇÃO (SOMENTE LOGÍSTICA) ----------
                 popularListaAtrasosProrrogacao(dados);
             }
 
@@ -2715,6 +3248,10 @@
             // GERAR PDF
             // ========================================================
             async function gerarPDFDashboard() {
+                if (!isAdmin()) {
+                    mostrarToast('Apenas administradores podem gerar PDF.', 'error');
+                    return;
+                }
                 const originalText = btnGerarPDF.innerHTML;
                 btnGerarPDF.disabled = true;
                 btnGerarPDF.innerHTML = '<span class="loading-indicator"></span> Gerando...';
@@ -2903,7 +3440,7 @@
                             listaHeader.style.fontWeight = '800';
                             listaHeader.style.letterSpacing = '1px';
                             listaHeader.style.textTransform = 'uppercase';
-                            listaHeader.textContent = '📋 Lista por Reclamação: Atrasos / Prorrogação';
+                            listaHeader.textContent = '📋 Lista por Reclamação: Atrasos / Prorrogação (Logística)';
                             extraWrapper.appendChild(listaHeader);
 
                             const listaConteudo = document.createElement('div');
@@ -2989,10 +3526,19 @@
             // ABAS
             // ========================================================
             function alternarAba(tabId) {
+                // Bloquear acesso a abas restritas
+                if (!isAdmin() && (tabId === 'registro' || tabId === 'usuarios')) {
+                    mostrarToast('Acesso restrito a administradores.', 'error');
+                    tabId = 'historico';
+                }
+
                 tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
                 tabContents.forEach(content => content.classList.toggle('active', content.id === `tab-${tabId}`));
                 if (tabId === 'dashboard') renderizarDashboard();
                 if (tabId === 'historico') renderizarTabela();
+                if (tabId === 'usuarios' && isAdmin()) {
+                    carregarUsuariosDoFirebase().then(renderizarUsuarios);
+                }
             }
 
             tabButtons.forEach(btn => {
@@ -3003,6 +3549,9 @@
             // EVENTOS
             // ========================================================
             form.addEventListener('submit', salvarRegistro);
+            formLogin.addEventListener('submit', processarLogin);
+            formUsuario.addEventListener('submit', salvarUsuario);
+            btnLogout.addEventListener('click', fazerLogout);
 
             btnLimpar.addEventListener('click', () => {
                 limparFormulario();
@@ -3132,6 +3681,34 @@
                     renderizarDashboard();
                 } finally {
                     mostrarLoadingGlobal(false);
+                }
+
+                // Verifica sessão salva
+                try {
+                    const savedSession = sessionStorage.getItem('sac_session');
+                    if (savedSession) {
+                        const parsed = JSON.parse(savedSession);
+                        if (parsed && parsed.username) {
+                            // Revalida admin fixo caso tenha sido alterado
+                            if (parsed.username === ADMIN_FIXO.username && parsed.tipo === 'admin') {
+                                currentUser = { username: ADMIN_FIXO.username, tipo: 'admin', isHardcoded: true };
+                            } else {
+                                currentUser = parsed;
+                            }
+                            loginOverlay.classList.add('hidden');
+                            aplicarPermissoes();
+                            if (isAdmin()) {
+                                carregarUsuariosDoFirebase().then(renderizarUsuarios);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Sessão inválida:', e);
+                }
+
+                // Foca no campo de login caso não esteja logado
+                if (!currentUser && loginUser) {
+                    setTimeout(() => loginUser.focus(), 200);
                 }
             }
 
