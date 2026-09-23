@@ -833,6 +833,17 @@
             padding-bottom: 8px;
         }
         .chart-container canvas { max-height: 300px; max-width: 100%; }
+        
+        /* ===== GRÁFICO AMPLIADO NA LARGURA: Quantidade Reclamada por Produto ===== */
+        .chart-container.chart-container-produtos {
+            grid-column: 1 / -1; /* Ocupa toda a largura da grade */
+        }
+        .chart-container.chart-container-produtos canvas {
+            max-height: 350px !important;
+            height: 350px !important;
+        }
+        /* ========================================================================= */
+
         .chart-container-full {
             grid-column: 1 / -1;
         }
@@ -1103,6 +1114,10 @@
             .btn { padding: 9px 16px; font-size: 0.8rem; }
             .tabs-nav { flex-direction: column; }
             .tab-btn { justify-content: center; }
+            .chart-container.chart-container-produtos canvas {
+                max-height: 300px !important;
+                height: 300px !important;
+            }
         }
         @media (max-width: 480px) {
             .header-stats { display: none; }
@@ -1466,7 +1481,8 @@
                         <h3>Ocorrência por Área</h3>
                         <canvas id="graficoArea"></canvas>
                     </div>
-                    <div class="chart-container">
+                    <!-- ===== GRÁFICO AMPLIADO NA LARGURA: Quantidade Reclamada por Produto ===== -->
+                    <div class="chart-container chart-container-produtos">
                         <h3>Quantidade Reclamada por Produto</h3>
                         <canvas id="graficoProdutos"></canvas>
                     </div>
@@ -2200,7 +2216,7 @@
                 'Aguardando liberação':                         { badge: 'badge-liberacao',     icon: '🔐' },
                 'Aguardando fiscal da entrada':                 { badge: 'badge-fiscal',        icon: '🧾' },
                 'Aguardando financeiro':                        { badge: 'badge-financeiro',    icon: '💰' },
-                'Aguardando devolução do controle de qualidade':{ badge: 'badge-qualidade',     icon: '🔍' },
+                'Aguardando qualidade':                         { badge: 'badge-qualidade',     icon: '🔍' },
                 'Aguardando nota de devolução':                 { badge: 'badge-aguardando',    icon: '⏳' },
                 'Cliente contabilizando':                       { badge: 'badge-contabilizando',icon: '📊' },
                 'Enviar reposição':                             { badge: 'badge-reposicao',     icon: '📦' },
@@ -2340,7 +2356,7 @@
                     { valor: 'Aguardando liberação', texto: '🔐 Aguardando liberação' },
                     { valor: 'Aguardando fiscal da entrada', texto: '🧾 Aguardando fiscal da entrada' },
                     { valor: 'Aguardando financeiro', texto: '💰 Aguardando financeiro' },
-                    { valor: 'Aguardando devolução do controle de qualidade', texto: '🔍 Aguardando devolução do controle de qualidade' },
+                    { valor: 'Aguardando qualidade', texto: '🔍 Aguardando qualidade' },
                     { valor: 'Aguardando nota de devolução', texto: '⏳ Aguardando nota de devolução' },
                     { valor: 'Cliente contabilizando', texto: '📊 Cliente contabilizando' },
                     { valor: 'Enviar reposição', texto: '📦 Enviar reposição' },
@@ -2938,7 +2954,7 @@
                     });
                 }
 
-                // ---------- Gráfico: Quantidade Reclamada por Produto ----------
+                // ---------- Gráfico: Quantidade Reclamada por Produto (LARGURA TOTAL) ----------
                 const produtoMap = new Map();
                 dados.forEach(r => {
                     const nome = r.descricaoProduto || r.codItem || 'Sem identificação';
@@ -2969,8 +2985,10 @@
                             }]
                         },
                         options: {
-                            responsive: true, maintainAspectRatio: true, animation: false,
-                            layout: { padding: { top: 60, right: 14, left: 10, bottom: 5 } },
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: false,
+                            layout: { padding: { top: 40, right: 14, left: 10, bottom: 80 } },
                             plugins: {
                                 legend: { display: false },
                                 datalabels: {
@@ -2979,7 +2997,7 @@
                                     offset: 6,
                                     clamp: false,
                                     color: '#3C1053',
-                                    font: { weight: 'bold', size: 10 },
+                                    font: { weight: 'bold', size: 11 },
                                     backgroundColor: 'rgba(255,255,255,0.9)',
                                     borderRadius: 4,
                                     padding: { top: 3, bottom: 3, left: 5, right: 5 },
@@ -2987,7 +3005,20 @@
                                 }
                             },
                             scales: {
-                                y: { beginAtZero: true, ticks: { precision: 0 }, grace: '22%' }
+                                x: {
+                                    ticks: {
+                                        autoSkip: false,
+                                        maxRotation: 90,
+                                        minRotation: 45,
+                                        font: { size: 11, weight: '600' },
+                                        color: '#3C1053'
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { precision: 0 },
+                                    grace: '22%'
+                                }
                             }
                         }
                     });
@@ -3406,6 +3437,7 @@
                 const origCharts = document.querySelectorAll('#chartsGridDashboard .chart-container');
                 for (const chartBox of origCharts) {
                     const isFull = chartBox.classList.contains('chart-container-full');
+                    const isProdutos = chartBox.classList.contains('chart-container-produtos');
 
                     const boxClone = document.createElement('div');
                     boxClone.style.background = '#FAFAFE';
@@ -3415,6 +3447,10 @@
                     boxClone.style.boxSizing = 'border-box';
                     boxClone.style.overflow = 'hidden';
                     if (isFull) {
+                        boxClone.style.gridColumn = '1 / -1';
+                    }
+                    if (isProdutos) {
+                        // No PDF mantemos o gráfico de produtos em largura total
                         boxClone.style.gridColumn = '1 / -1';
                     }
 
@@ -3450,7 +3486,7 @@
                         img.style.width = '100%';
                         img.style.height = 'auto';
                         img.style.display = 'block';
-                        img.style.maxHeight = '300px';
+                        img.style.maxHeight = isProdutos ? '400px' : '300px';
                         img.style.objectFit = 'contain';
                         boxClone.appendChild(img);
                     }
