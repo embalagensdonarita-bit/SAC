@@ -1445,6 +1445,14 @@
                             <option value="Outro">Outro</option>
                         </select>
                     </div>
+                    <div class="filter-group">
+                        <label class="filter-label">🔍 Origem</label>
+                        <select class="form-select" id="dashFiltroOrigem" style="min-width: 140px;">
+                            <option value="">Todas as Origens</option>
+                            <option value="Interno">🏭 Interno</option>
+                            <option value="Externo">🌐 Externo</option>
+                        </select>
+                    </div>
                     <button class="btn btn-outline btn-sm" id="btnLimparFiltrosDash" style="margin-bottom: 2px;">
                         ✖ Limpar Filtros
                     </button>
@@ -1665,6 +1673,7 @@
             const dashFiltroData = $('dashFiltroData');
             const dashFiltroMes = $('dashFiltroMes');
             const dashFiltroArea = $('dashFiltroArea');
+            const dashFiltroOrigem = $('dashFiltroOrigem');
             const btnLimparFiltrosDash = $('btnLimparFiltrosDash');
             const btnGerarPDF = $('btnGerarPDF');
 
@@ -2786,10 +2795,12 @@
                 const dataFiltro = dashFiltroData.value;
                 const mesFiltro = dashFiltroMes.value;
                 const areaFiltro = dashFiltroArea ? dashFiltroArea.value : '';
+                const origemFiltro = dashFiltroOrigem ? dashFiltroOrigem.value : '';
                 return registros.filter(r => {
                     if (dataFiltro && r.dataOcorrencia !== dataFiltro) return false;
                     if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
                     if (areaFiltro && (r.areaEnvolvida || '') !== areaFiltro) return false;
+                    if (origemFiltro && (r.origem || 'Interno') !== origemFiltro) return false;
                     return true;
                 });
             }
@@ -3251,289 +3262,310 @@
                 btnGerarPDF.innerHTML = '<span class="loading-indicator"></span> Gerando...';
 
                 try {
-                    const dataFiltro = dashFiltroData.value;
-                    const mesFiltro = dashFiltroMes.value;
-                    const areaFiltro = dashFiltroArea ? dashFiltroArea.value : '';
-                    let filtroTexto = 'Todos os registros';
-                    if (dataFiltro && mesFiltro) {
-                        filtroTexto = `Dia: ${formatarData(dataFiltro)} · Mês: ${mesFiltro}`;
-                    } else if (dataFiltro) {
-                        filtroTexto = `Dia: ${formatarData(dataFiltro)}`;
-                    } else if (mesFiltro) {
-                        const [ano, mes] = mesFiltro.split('-');
-                        const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-                                       'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-                        filtroTexto = `Mês: ${meses[parseInt(mes, 10) - 1]}/${ano}`;
-                    }
-                    if (areaFiltro) {
-                        filtroTexto += (filtroTexto === 'Todos os registros' ? '' : ' · ') + `Área: ${areaFiltro}`;
-                    }
-
-                    const dados = filtrarRegistrosDashboard();
-                    let totalPendentes = 0, totalConcluidos = 0, totalQtdReclamada = 0, totalBonificacao = 0, totalEmAtraso = 0;
-                    let totalNfNfd = 0;
-                    dados.forEach(r => {
-                        if (r.andamento === 'Concluído') totalConcluidos++;
-                        else {
-                            totalPendentes++;
-                            if (isAlertaPrazo(r)) totalEmAtraso++;
-                        }
-                        totalQtdReclamada += parseFloat(r.valorNFD) || 0;
-                        totalBonificacao += parseFloat(r.bonificacao) || 0;
-                        const vNf = parseValorBR(r.nfNfd);
-                        if (vNf !== null) totalNfNfd += vNf;
-                    });
-
-                    const agora = new Date();
-                    const dataGeracao = agora.toLocaleDateString('pt-BR') + ' às ' +
-                        agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-                    const container = document.createElement('div');
-                    container.style.position = 'fixed';
-                    container.style.left = '-99999px';
-                    container.style.top = '0';
-                    container.style.width = '1240px';
-                    container.style.background = '#ffffff';
-                    container.style.padding = '40px';
-                    container.style.fontFamily = "'Segoe UI', sans-serif";
-                    container.style.color = '#1A1A2E';
-                    container.style.boxSizing = 'border-box';
-
-                    container.innerHTML = `
-                        <div style="border-bottom: 4px solid #7C3AED; padding-bottom: 20px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
-                            <div style="display: flex; align-items: center; gap: 16px;">
-                                <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #3C1053 0%, #7C3AED 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 34px; color: #fff;">📦</div>
-                                <div>
-                                    <div style="font-size: 26px; font-weight: 800; color: #3C1053; letter-spacing: 0.5px;">DONA RITA EMBALAGENS</div>
-                                    <div style="font-size: 12px; font-weight: 700; color: #7C3AED; letter-spacing: 2px;">SAC · RELATÓRIO DO DASHBOARD</div>
-                                </div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 11px; color: #5C5C8A; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Gerado em</div>
-                                <div style="font-size: 14px; font-weight: 700; color: #1A1A2E; margin-bottom: 6px;">${dataGeracao}</div>
-                                <div style="font-size: 11px; color: #5C5C8A; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Filtro Aplicado</div>
-                                <div style="font-size: 14px; font-weight: 700; color: #1A1A2E;">${filtroTexto}</div>
-                            </div>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 25px;">
-                            <div style="background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
-                                <div style="font-size: 22px; font-weight: 800;">${dados.length}</div>
-                                <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Total Registros</div>
-                            </div>
-                            <div style="background: linear-gradient(135deg, #E65100 0%, #F57C00 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
-                                <div style="font-size: 22px; font-weight: 800;">${totalPendentes}</div>
-                                <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Pendentes</div>
-                            </div>
-                            <div style="background: linear-gradient(135deg, #388E3C 0%, #4CAF50 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
-                                <div style="font-size: 22px; font-weight: 800;">${totalConcluidos}</div>
-                                <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Concluídos</div>
-                            </div>
-                            <div style="background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
-                                <div style="font-size: 22px; font-weight: 800;">${totalQtdReclamada.toLocaleString('pt-BR')}</div>
-                                <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Qtd. Reclamada</div>
-                            </div>
-                            <div style="background: linear-gradient(135deg, #1A0033 0%, #3C1053 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
-                                <div style="font-size: 16px; font-weight: 800;">R$ ${totalBonificacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                                <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Bonificação</div>
-                            </div>
-                            <div style="background: linear-gradient(135deg, #00897B 0%, #4DB6AC 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
-                                <div style="font-size: 16px; font-weight: 800;">R$ ${formatarMoedaBR(totalNfNfd)}</div>
-                                <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Nf / Nfd</div>
-                            </div>
-                        </div>
-
-                        ${totalEmAtraso > 0 ? `
-                        <div style="background: linear-gradient(135deg, #FFF3F3 0%, #FFEBEE 100%); border: 2px solid #E53935; border-left: 8px solid #E53935; border-radius: 12px; padding: 16px 20px; margin-bottom: 25px; display: flex; align-items: center; gap: 16px;">
-                            <div style="width: 52px; height: 52px; background: linear-gradient(135deg, #E53935 0%, #FF6B6B 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; color: #fff; flex-shrink: 0;">⏰</div>
-                            <div style="flex: 1;">
-                                <div style="font-size: 15px; font-weight: 800; color: #C62828; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">🚨 Alerta de Prazos</div>
-                                <div style="font-size: 13px; color: #B71C1C; font-weight: 600;">
-                                    Existem <strong style="color: #E53935; font-size: 16px;">${totalEmAtraso} reclamação(ões)</strong> com mais de ${DIAS_ALERTA_PRAZO} dias em aberto que precisam de atenção imediata.
-                                </div>
-                            </div>
-                        </div>
-                        ` : ''}
-
-                        <div id="pdfChartsWrap" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"></div>
-                        <div style="margin-top: 24px; padding-top: 16px; border-top: 2px solid #E8EAF6; display: flex; justify-content: space-between; font-size: 10px; color: #5C5C8A;">
-                            <span>DONA RITA EMBALAGENS · Sistema SAC</span>
-                            <span>Relatório gerado automaticamente · ${dataGeracao}</span>
-                        </div>
-                    `;
-
-                    document.body.appendChild(container);
-                    const wrap = container.querySelector('#pdfChartsWrap');
-
-                    const origCharts = document.querySelectorAll('#chartsGridDashboard .chart-container');
-                    for (const chartBox of origCharts) {
-                        const isFull = chartBox.classList.contains('chart-container-full');
-
-                        const boxClone = document.createElement('div');
-                        boxClone.style.background = '#FAFAFE';
-                        boxClone.style.padding = '16px';
-                        boxClone.style.borderRadius = '12px';
-                        boxClone.style.border = '1.5px solid #C5CAE9';
-                        boxClone.style.boxSizing = 'border-box';
-                        boxClone.style.overflow = 'hidden';
-                        if (isFull) {
-                            boxClone.style.gridColumn = '1 / -1';
-                        }
-
-                        const titulo = chartBox.querySelector('h3');
-                        const tituloClone = document.createElement('div');
-                        tituloClone.style.fontSize = '13px';
-                        tituloClone.style.fontWeight = '800';
-                        tituloClone.style.color = '#3C1053';
-                        tituloClone.style.textAlign = 'center';
-                        tituloClone.style.textTransform = 'uppercase';
-                        tituloClone.style.letterSpacing = '0.8px';
-                        tituloClone.style.borderBottom = '1px solid #E8EAF6';
-                        tituloClone.style.paddingBottom = '8px';
-                        tituloClone.style.marginBottom = '12px';
-                        tituloClone.textContent = titulo ? titulo.textContent : '';
-                        boxClone.appendChild(tituloClone);
-
-                        const canvasOrig = chartBox.querySelector('canvas');
-                        if (canvasOrig) {
-                            const img = document.createElement('img');
-                            try {
-                                const tmpCanvas = document.createElement('canvas');
-                                tmpCanvas.width = canvasOrig.width;
-                                tmpCanvas.height = canvasOrig.height;
-                                const tctx = tmpCanvas.getContext('2d');
-                                tctx.fillStyle = '#FFFFFF';
-                                tctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
-                                tctx.drawImage(canvasOrig, 0, 0);
-                                img.src = tmpCanvas.toDataURL('image/png');
-                            } catch (err) {
-                                img.src = canvasOrig.toDataURL('image/png');
-                            }
-                            img.style.width = '100%';
-                            img.style.height = 'auto';
-                            img.style.display = 'block';
-                            img.style.maxHeight = '300px';
-                            img.style.objectFit = 'contain';
-                            boxClone.appendChild(img);
-                        }
-
-                        const mediaOrig = chartBox.querySelector('#mediaAtrasosProrrogacao');
-                        if (mediaOrig && mediaOrig.innerHTML.trim() && mediaOrig.style.display !== 'none') {
-                            const mediaClone = document.createElement('div');
-                            mediaClone.style.textAlign = 'center';
-                            mediaClone.style.margin = '10px 0 6px';
-                            mediaClone.style.fontSize = '12px';
-                            mediaClone.style.fontWeight = '700';
-                            mediaClone.style.color = '#3C1053';
-                            mediaClone.style.background = '#F3E5F5';
-                            mediaClone.style.border = '1.5px dashed #B39DDB';
-                            mediaClone.style.borderRadius = '10px';
-                            mediaClone.style.padding = '8px 12px';
-                            mediaClone.style.display = 'flex';
-                            mediaClone.style.justifyContent = 'center';
-                            mediaClone.style.gap = '20px';
-                            mediaClone.style.flexWrap = 'wrap';
-                            mediaClone.innerHTML = mediaOrig.innerHTML;
-                            boxClone.appendChild(mediaClone);
-                        }
-
-                        const listaOrig = chartBox.querySelector('#listaAtrasosProrrogacao');
-                        if (listaOrig && listaOrig.innerHTML.trim() && !listaOrig.querySelector('.lista-vazia')) {
-                            const extraWrapper = document.createElement('div');
-                            extraWrapper.style.marginTop = '14px';
-                            extraWrapper.style.borderRadius = '8px';
-                            extraWrapper.style.border = '1px solid #C8B8E0';
-                            extraWrapper.style.overflow = 'hidden';
-                            extraWrapper.style.background = '#ffffff';
-
-                            const listaHeader = document.createElement('div');
-                            listaHeader.style.background = 'linear-gradient(135deg, #3C1053 0%, #5B2A86 100%)';
-                            listaHeader.style.color = '#fff';
-                            listaHeader.style.padding = '8px 12px';
-                            listaHeader.style.fontSize = '11px';
-                            listaHeader.style.fontWeight = '800';
-                            listaHeader.style.letterSpacing = '1px';
-                            listaHeader.style.textTransform = 'uppercase';
-                            listaHeader.textContent = '📋 Lista por Reclamação: Atrasos / Prorrogação (Logística)';
-                            extraWrapper.appendChild(listaHeader);
-
-                            const listaConteudo = document.createElement('div');
-                            listaConteudo.innerHTML = listaOrig.innerHTML;
-                            listaConteudo.style.padding = '0';
-                            listaConteudo.style.maxHeight = 'none';
-                            listaConteudo.style.overflow = 'visible';
-
-                            extraWrapper.appendChild(listaConteudo);
-                            boxClone.appendChild(extraWrapper);
-                        }
-
-                        wrap.appendChild(boxClone);
-                    }
-
-                    await new Promise(resolve => setTimeout(resolve, 400));
-
-                    const canvas = await html2canvas(container, {
-                        scale: 2,
-                        useCORS: true,
-                        backgroundColor: '#ffffff',
-                        logging: false,
-                        windowWidth: 1240
-                    });
-
-                    const imgData = canvas.toDataURL('image/png');
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-                    const pageWidth = pdf.internal.pageSize.getWidth();
-                    const pageHeight = pdf.internal.pageSize.getHeight();
-                    const margin = 8;
-                    const imgWidth = pageWidth - margin * 2;
-                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                    const pageContentHeight = pageHeight - margin * 2;
-
-                    if (imgHeight <= pageContentHeight) {
-                        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
-                    } else {
-                        const pageHeightPx = Math.floor((pageContentHeight / imgWidth) * canvas.width);
-                        const sliceCanvas = document.createElement('canvas');
-                        sliceCanvas.width = canvas.width;
-                        const sliceCtx = sliceCanvas.getContext('2d');
-                        let yOffset = 0;
-                        let pageNum = 0;
-
-                        while (yOffset < canvas.height) {
-                            const remaining = canvas.height - yOffset;
-                            const sliceH = Math.min(pageHeightPx, remaining);
-                            sliceCanvas.height = sliceH;
-                            sliceCtx.clearRect(0, 0, sliceCanvas.width, sliceH);
-                            sliceCtx.fillStyle = '#FFFFFF';
-                            sliceCtx.fillRect(0, 0, sliceCanvas.width, sliceH);
-                            sliceCtx.drawImage(canvas, 0, yOffset, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
-
-                            const sliceImg = sliceCanvas.toDataURL('image/png');
-                            const sliceImgHeight = (sliceH * imgWidth) / canvas.width;
-                            if (pageNum > 0) pdf.addPage();
-                            pdf.addImage(sliceImg, 'PNG', margin, margin, imgWidth, sliceImgHeight);
-                            yOffset += sliceH;
-                            pageNum++;
-                        }
-                    }
-
-                    const sufixoData = dataFiltro || mesFiltro || 'Completo';
-                    const nomeArquivo = `Dashboard_SAC_${sufixoData}_${agora.toISOString().split('T')[0]}.pdf`;
-                    pdf.save(nomeArquivo);
-
-                    document.body.removeChild(container);
-                    mostrarToast('PDF do dashboard gerado com sucesso!', 'success');
+                    await gerarPDFPorOrigem('Interno');
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    await gerarPDFPorOrigem('Externo');
+                    mostrarToast('PDFs gerados com sucesso!', 'success');
                 } catch (err) {
                     console.error('Erro ao gerar PDF:', err);
                     mostrarToast('Erro ao gerar PDF. Tente novamente.', 'error');
-                    const leftover = document.querySelector('div[style*="-99999px"]');
-                    if (leftover && leftover.parentNode === document.body) document.body.removeChild(leftover);
                 } finally {
                     btnGerarPDF.disabled = false;
                     btnGerarPDF.innerHTML = originalText;
                 }
+            }
+
+            async function gerarPDFPorOrigem(origemFiltro) {
+                const originalOrigem = dashFiltroOrigem.value;
+                dashFiltroOrigem.value = origemFiltro;
+                renderizarDashboard();
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for charts to render
+
+                const dataFiltro = dashFiltroData.value;
+                const mesFiltro = dashFiltroMes.value;
+                const areaFiltro = dashFiltroArea ? dashFiltroArea.value : '';
+                
+                let filtroTexto = `Origem: ${origemFiltro === 'Interno' ? '🏭 Interno' : '🌐 Externo'}`;
+                if (dataFiltro && mesFiltro) {
+                    filtroTexto += ` · Dia: ${formatarData(dataFiltro)} · Mês: ${mesFiltro}`;
+                } else if (dataFiltro) {
+                    filtroTexto += ` · Dia: ${formatarData(dataFiltro)}`;
+                } else if (mesFiltro) {
+                    const [ano, mes] = mesFiltro.split('-');
+                    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                                   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+                    filtroTexto += ` · Mês: ${meses[parseInt(mes, 10) - 1]}/${ano}`;
+                }
+                if (areaFiltro) {
+                    filtroTexto += ` · Área: ${areaFiltro}`;
+                }
+
+                const dados = registros.filter(r => {
+                    if (dataFiltro && r.dataOcorrencia !== dataFiltro) return false;
+                    if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
+                    if (areaFiltro && (r.areaEnvolvida || '') !== areaFiltro) return false;
+                    if ((r.origem || 'Interno') !== origemFiltro) return false;
+                    return true;
+                });
+
+                let totalPendentes = 0, totalConcluidos = 0, totalQtdReclamada = 0, totalBonificacao = 0, totalEmAtraso = 0;
+                let totalNfNfd = 0;
+                dados.forEach(r => {
+                    if (r.andamento === 'Concluído') totalConcluidos++;
+                    else {
+                        totalPendentes++;
+                        if (isAlertaPrazo(r)) totalEmAtraso++;
+                    }
+                    totalQtdReclamada += parseFloat(r.valorNFD) || 0;
+                    totalBonificacao += parseFloat(r.bonificacao) || 0;
+                    const vNf = parseValorBR(r.nfNfd);
+                    if (vNf !== null) totalNfNfd += vNf;
+                });
+
+                const agora = new Date();
+                const dataGeracao = agora.toLocaleDateString('pt-BR') + ' às ' +
+                    agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+                const container = document.createElement('div');
+                container.style.position = 'fixed';
+                container.style.left = '-99999px';
+                container.style.top = '0';
+                container.style.width = '1240px';
+                container.style.background = '#ffffff';
+                container.style.padding = '40px';
+                container.style.fontFamily = "'Segoe UI', sans-serif";
+                container.style.color = '#1A1A2E';
+                container.style.boxSizing = 'border-box';
+
+                container.innerHTML = `
+                    <div style="border-bottom: 4px solid #7C3AED; padding-bottom: 20px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #3C1053 0%, #7C3AED 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 34px; color: #fff;">📦</div>
+                            <div>
+                                <div style="font-size: 26px; font-weight: 800; color: #3C1053; letter-spacing: 0.5px;">DONA RITA EMBALAGENS</div>
+                                <div style="font-size: 12px; font-weight: 700; color: #7C3AED; letter-spacing: 2px;">SAC · RELATÓRIO DO DASHBOARD - ${origemFiltro.toUpperCase()}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 11px; color: #5C5C8A; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Gerado em</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #1A1A2E; margin-bottom: 6px;">${dataGeracao}</div>
+                            <div style="font-size: 11px; color: #5C5C8A; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Filtro Aplicado</div>
+                            <div style="font-size: 14px; font-weight: 700; color: #1A1A2E;">${filtroTexto}</div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 25px;">
+                        <div style="background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 22px; font-weight: 800;">${dados.length}</div>
+                            <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Total Registros</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #E65100 0%, #F57C00 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 22px; font-weight: 800;">${totalPendentes}</div>
+                            <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Pendentes</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #388E3C 0%, #4CAF50 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 22px; font-weight: 800;">${totalConcluidos}</div>
+                            <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Concluídos</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 22px; font-weight: 800;">${totalQtdReclamada.toLocaleString('pt-BR')}</div>
+                            <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Qtd. Reclamada</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #1A0033 0%, #3C1053 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 16px; font-weight: 800;">R$ ${totalBonificacao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                            <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Bonificação</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #00897B 0%, #4DB6AC 100%); color: #fff; padding: 14px 10px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 16px; font-weight: 800;">R$ ${formatarMoedaBR(totalNfNfd)}</div>
+                            <div style="font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Nf / Nfd</div>
+                        </div>
+                    </div>
+
+                    ${totalEmAtraso > 0 ? `
+                    <div style="background: linear-gradient(135deg, #FFF3F3 0%, #FFEBEE 100%); border: 2px solid #E53935; border-left: 8px solid #E53935; border-radius: 12px; padding: 16px 20px; margin-bottom: 25px; display: flex; align-items: center; gap: 16px;">
+                        <div style="width: 52px; height: 52px; background: linear-gradient(135deg, #E53935 0%, #FF6B6B 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; color: #fff; flex-shrink: 0;">⏰</div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 15px; font-weight: 800; color: #C62828; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">🚨 Alerta de Prazos</div>
+                            <div style="font-size: 13px; color: #B71C1C; font-weight: 600;">
+                                Existem <strong style="color: #E53935; font-size: 16px;">${totalEmAtraso} reclamação(ões)</strong> com mais de ${DIAS_ALERTA_PRAZO} dias em aberto que precisam de atenção imediata.
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <div id="pdfChartsWrap_${origemFiltro}" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"></div>
+                    <div style="margin-top: 24px; padding-top: 16px; border-top: 2px solid #E8EAF6; display: flex; justify-content: space-between; font-size: 10px; color: #5C5C8A;">
+                        <span>DONA RITA EMBALAGENS · Sistema SAC</span>
+                        <span>Relatório gerado automaticamente · ${dataGeracao}</span>
+                    </div>
+                `;
+
+                document.body.appendChild(container);
+                const wrap = container.querySelector(`#pdfChartsWrap_${origemFiltro}`);
+
+                const origCharts = document.querySelectorAll('#chartsGridDashboard .chart-container');
+                for (const chartBox of origCharts) {
+                    const isFull = chartBox.classList.contains('chart-container-full');
+
+                    const boxClone = document.createElement('div');
+                    boxClone.style.background = '#FAFAFE';
+                    boxClone.style.padding = '16px';
+                    boxClone.style.borderRadius = '12px';
+                    boxClone.style.border = '1.5px solid #C5CAE9';
+                    boxClone.style.boxSizing = 'border-box';
+                    boxClone.style.overflow = 'hidden';
+                    if (isFull) {
+                        boxClone.style.gridColumn = '1 / -1';
+                    }
+
+                    const titulo = chartBox.querySelector('h3');
+                    const tituloClone = document.createElement('div');
+                    tituloClone.style.fontSize = '13px';
+                    tituloClone.style.fontWeight = '800';
+                    tituloClone.style.color = '#3C1053';
+                    tituloClone.style.textAlign = 'center';
+                    tituloClone.style.textTransform = 'uppercase';
+                    tituloClone.style.letterSpacing = '0.8px';
+                    tituloClone.style.borderBottom = '1px solid #E8EAF6';
+                    tituloClone.style.paddingBottom = '8px';
+                    tituloClone.style.marginBottom = '12px';
+                    tituloClone.textContent = titulo ? titulo.textContent : '';
+                    boxClone.appendChild(tituloClone);
+
+                    const canvasOrig = chartBox.querySelector('canvas');
+                    if (canvasOrig) {
+                        const img = document.createElement('img');
+                        try {
+                            const tmpCanvas = document.createElement('canvas');
+                            tmpCanvas.width = canvasOrig.width;
+                            tmpCanvas.height = canvasOrig.height;
+                            const tctx = tmpCanvas.getContext('2d');
+                            tctx.fillStyle = '#FFFFFF';
+                            tctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+                            tctx.drawImage(canvasOrig, 0, 0);
+                            img.src = tmpCanvas.toDataURL('image/png');
+                        } catch (err) {
+                            img.src = canvasOrig.toDataURL('image/png');
+                        }
+                        img.style.width = '100%';
+                        img.style.height = 'auto';
+                        img.style.display = 'block';
+                        img.style.maxHeight = '300px';
+                        img.style.objectFit = 'contain';
+                        boxClone.appendChild(img);
+                    }
+
+                    const mediaOrig = chartBox.querySelector('#mediaAtrasosProrrogacao');
+                    if (mediaOrig && mediaOrig.innerHTML.trim() && mediaOrig.style.display !== 'none') {
+                        const mediaClone = document.createElement('div');
+                        mediaClone.style.textAlign = 'center';
+                        mediaClone.style.margin = '10px 0 6px';
+                        mediaClone.style.fontSize = '12px';
+                        mediaClone.style.fontWeight = '700';
+                        mediaClone.style.color = '#3C1053';
+                        mediaClone.style.background = '#F3E5F5';
+                        mediaClone.style.border = '1.5px dashed #B39DDB';
+                        mediaClone.style.borderRadius = '10px';
+                        mediaClone.style.padding = '8px 12px';
+                        mediaClone.style.display = 'flex';
+                        mediaClone.style.justifyContent = 'center';
+                        mediaClone.style.gap = '20px';
+                        mediaClone.style.flexWrap = 'wrap';
+                        mediaClone.innerHTML = mediaOrig.innerHTML;
+                        boxClone.appendChild(mediaClone);
+                    }
+
+                    const listaOrig = chartBox.querySelector('#listaAtrasosProrrogacao');
+                    if (listaOrig && listaOrig.innerHTML.trim() && !listaOrig.querySelector('.lista-vazia')) {
+                        const extraWrapper = document.createElement('div');
+                        extraWrapper.style.marginTop = '14px';
+                        extraWrapper.style.borderRadius = '8px';
+                        extraWrapper.style.border = '1px solid #C8B8E0';
+                        extraWrapper.style.overflow = 'hidden';
+                        extraWrapper.style.background = '#ffffff';
+
+                        const listaHeader = document.createElement('div');
+                        listaHeader.style.background = 'linear-gradient(135deg, #3C1053 0%, #5B2A86 100%)';
+                        listaHeader.style.color = '#fff';
+                        listaHeader.style.padding = '8px 12px';
+                        listaHeader.style.fontSize = '11px';
+                        listaHeader.style.fontWeight = '800';
+                        listaHeader.style.letterSpacing = '1px';
+                        listaHeader.style.textTransform = 'uppercase';
+                        listaHeader.textContent = '📋 Lista por Reclamação: Atrasos / Prorrogação (Logística)';
+                        extraWrapper.appendChild(listaHeader);
+
+                        const listaConteudo = document.createElement('div');
+                        listaConteudo.innerHTML = listaOrig.innerHTML;
+                        listaConteudo.style.padding = '0';
+                        listaConteudo.style.maxHeight = 'none';
+                        listaConteudo.style.overflow = 'visible';
+
+                        extraWrapper.appendChild(listaConteudo);
+                        boxClone.appendChild(extraWrapper);
+                    }
+
+                    wrap.appendChild(boxClone);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 400));
+
+                const canvas = await html2canvas(container, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    windowWidth: 1240
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const margin = 8;
+                const imgWidth = pageWidth - margin * 2;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                const pageContentHeight = pageHeight - margin * 2;
+
+                if (imgHeight <= pageContentHeight) {
+                    pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+                } else {
+                    const pageHeightPx = Math.floor((pageContentHeight / imgWidth) * canvas.width);
+                    const sliceCanvas = document.createElement('canvas');
+                    sliceCanvas.width = canvas.width;
+                    const sliceCtx = sliceCanvas.getContext('2d');
+                    let yOffset = 0;
+                    let pageNum = 0;
+
+                    while (yOffset < canvas.height) {
+                        const remaining = canvas.height - yOffset;
+                        const sliceH = Math.min(pageHeightPx, remaining);
+                        sliceCanvas.height = sliceH;
+                        sliceCtx.clearRect(0, 0, sliceCanvas.width, sliceH);
+                        sliceCtx.fillStyle = '#FFFFFF';
+                        sliceCtx.fillRect(0, 0, sliceCanvas.width, sliceH);
+                        sliceCtx.drawImage(canvas, 0, yOffset, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+
+                        const sliceImg = sliceCanvas.toDataURL('image/png');
+                        const sliceImgHeight = (sliceH * imgWidth) / canvas.width;
+                        if (pageNum > 0) pdf.addPage();
+                        pdf.addImage(sliceImg, 'PNG', margin, margin, imgWidth, sliceImgHeight);
+                        yOffset += sliceH;
+                        pageNum++;
+                    }
+                }
+
+                const sufixoData = dataFiltro || mesFiltro || 'Completo';
+                const nomeArquivo = `Dashboard_SAC_${origemFiltro}_${sufixoData}_${agora.toISOString().split('T')[0]}.pdf`;
+                pdf.save(nomeArquivo);
+
+                document.body.removeChild(container);
+
+                // Restore original filter
+                dashFiltroOrigem.value = originalOrigem;
+                renderizarDashboard();
             }
 
             // ========================================================
@@ -3591,11 +3623,15 @@
             if (dashFiltroArea) {
                 dashFiltroArea.addEventListener('change', renderizarDashboard);
             }
+            if (dashFiltroOrigem) {
+                dashFiltroOrigem.addEventListener('change', renderizarDashboard);
+            }
 
             btnLimparFiltrosDash.addEventListener('click', () => {
                 dashFiltroData.value = '';
                 dashFiltroMes.value = '';
                 if (dashFiltroArea) dashFiltroArea.value = '';
+                if (dashFiltroOrigem) dashFiltroOrigem.value = '';
                 renderizarDashboard();
                 mostrarToast('Filtros do dashboard removidos!', 'warning');
             });
