@@ -1589,19 +1589,73 @@
             const CALLMEBOT_PHONE = '5511972376348';
             const CALLMEBOT_APIKEY = '8294015';
 
+            /**
+             * Envia notificação via WhatsApp usando CallMeBot.
+             * Utiliza múltiplos métodos para garantir a entrega:
+             * 1) fetch no-cors (padrão)
+             * 2) Image beacon (backup, dispara após 800ms)
+             */
             function enviarWhatsApp(mensagem) {
                 try {
-                    const texto = encodeURIComponent(mensagem);
-                    const url = `https://api.callmebot.com/whatsapp.php?phone=${CALLMEBOT_PHONE}&text=${texto}&apikey=${CALLMEBOT_APIKEY}`;
-                    // Usa imagem fantasma para evitar problemas de CORS
-                    const img = new Image();
-                    img.src = url;
-                    // Fallback adicional via fetch no-cors
-                    fetch(url, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
+                    // Codifica a mensagem e limita tamanho
+                    let texto = encodeURIComponent(mensagem);
+                    const MAX_LEN = 1400;
+                    if (texto.length > MAX_LEN) {
+                        texto = texto.substring(0, MAX_LEN);
+                    }
+
+                    const baseUrl = `https://api.callmebot.com/whatsapp.php?phone=${CALLMEBOT_PHONE}&apikey=${CALLMEBOT_APIKEY}&text=${texto}`;
+
+                    console.log('%c📱 [WhatsApp] Enviando notificação...', 'color:#25D366;font-weight:bold;');
+                    console.log('   →', mensagem.substring(0, 120).replace(/\n/g, ' | '));
+
+                    // MÉTODO 1: fetch no-cors
+                    fetch(baseUrl, {
+                        method: 'GET',
+                        mode: 'no-cors',
+                        cache: 'no-store',
+                        redirect: 'follow'
+                    }).then(() => {
+                        console.log('%c✅ [WhatsApp] Requisição fetch concluída.', 'color:#25D366;');
+                    }).catch(err => {
+                        console.warn('⚠️ [WhatsApp] fetch falhou, usando backup:', err);
+                        _enviarWhatsAppBeacon(baseUrl);
+                    });
+
+                    // MÉTODO 2 (backup): Image beacon após pequeno delay
+                    // Garante entrega caso o fetch seja bloqueado silenciosamente
+                    setTimeout(() => {
+                        _enviarWhatsAppBeacon(baseUrl);
+                    }, 1200);
+
                 } catch (err) {
-                    console.warn('Erro ao enviar WhatsApp:', err);
+                    console.error('❌ [WhatsApp] Erro geral:', err);
                 }
             }
+
+            function _enviarWhatsAppBeacon(url) {
+                try {
+                    const img = new Image(1, 1);
+                    img.style.position = 'absolute';
+                    img.style.left = '-9999px';
+                    img.style.top = '-9999px';
+                    img.style.width = '1px';
+                    img.style.height = '1px';
+                    img.onload = img.onerror = function() {
+                        if (this.parentNode) this.parentNode.removeChild(this);
+                    };
+                    img.src = url + '&_t=' + Date.now();
+                    document.body.appendChild(img);
+                    setTimeout(() => {
+                        if (img.parentNode) img.parentNode.removeChild(img);
+                    }, 15000);
+                } catch (e) {
+                    console.warn('⚠️ [WhatsApp] beacon falhou:', e);
+                }
+            }
+
+            // Expor para testes via console: enviarWhatsApp("teste")
+            window.enviarWhatsApp = enviarWhatsApp;
 
             // ========================================================
             // CONFIGURAÇÃO FIREBASE
@@ -1861,11 +1915,9 @@
             }
 
             async function validarCredenciais(username, password) {
-                // Admin hardcoded
                 if (username === ADMIN_FIXO.username && password === ADMIN_FIXO.password) {
                     return { username: ADMIN_FIXO.username, tipo: 'admin', isHardcoded: true };
                 }
-                // Buscar usuários no Firestore
                 try {
                     const snap = await db.collection(USERS_COLLECTION)
                         .where('username', '==', username)
@@ -1900,7 +1952,6 @@
                 if (!tabelaUsuarios) return;
                 tabelaUsuarios.innerHTML = '';
 
-                // Admin fixo (não pode ser removido)
                 const trAdmin = document.createElement('tr');
                 trAdmin.innerHTML = `
                     <td><strong>👑 Duda</strong> <span style="color:#5C5C8A; font-size: 0.7rem;">(admin fixo)</span></td>
@@ -1938,7 +1989,6 @@
                 if (!currentUser) return;
                 const adm = isAdmin();
 
-                // Mostrar/ocultar abas restritas
                 document.querySelectorAll('.tab-btn').forEach(btn => {
                     const tab = btn.dataset.tab;
                     if (tab === 'registro' || tab === 'usuarios') {
@@ -1946,12 +1996,10 @@
                     }
                 });
 
-                // Botão PDF
                 if (btnGerarPDF) {
                     btnGerarPDF.style.display = adm ? '' : 'none';
                 }
 
-                // Info do usuário
                 if (userInfo) {
                     userInfo.innerHTML = `
                         <span>👤 ${currentUser.username}</span>
@@ -1959,7 +2007,6 @@
                     `;
                 }
 
-                // Se não é admin, garantir que está em uma aba permitida
                 if (!adm) {
                     const activeTab = document.querySelector('.tab-btn.active');
                     if (activeTab && (activeTab.dataset.tab === 'registro' || activeTab.dataset.tab === 'usuarios')) {
@@ -1967,7 +2014,6 @@
                     }
                 }
 
-                // Re-render tabela para esconder/mostrar ações
                 renderizarTabela();
             }
 
@@ -2039,7 +2085,6 @@
                 loginPass.value = '';
                 loginError.textContent = '';
                 loginUser.focus();
-                // Reset abas visíveis
                 document.querySelectorAll('.tab-btn').forEach(btn => {
                     btn.style.display = '';
                 });
@@ -2584,7 +2629,7 @@
                             `📌 Causa: ${dados.causaResumida}\n` +
                             `📊 Andamento: ${dados.andamento}\n`;
                         if (mudouAndamento) {
-                            msgWhats += `🔄 *Mudança de Status:* ${original.andamento} → ${dados.andamento}\n`;
+                            msgWhats += `🔄 *Mudança:* ${original.andamento} → ${dados.andamento}\n`;
                         }
                         msgWhats += `👤 Por: ${currentUser.username}\n` +
                             `🕒 Data/Hora: ${dataHora}`;
@@ -2611,7 +2656,7 @@
                         // NOTIFICAÇÃO WHATSAPP: NOVO REGISTRO
                         const dataHora = new Date().toLocaleString('pt-BR');
                         enviarWhatsApp(
-                            `🚨 *NOVA NÃO CONFORMIDADE REGISTRADA*\n\n` +
+                            `🚨 *NOVA NÃO CONFORMIDADE*\n\n` +
                             `📋 Nº Registro: #${dados.numRegistro}\n` +
                             `👤 Cliente: ${dados.cliente}\n` +
                             `📅 Data Ocorrência: ${formatarData(dados.dataOcorrencia)}\n` +
@@ -2620,10 +2665,10 @@
                             `📌 Causa: ${dados.causaResumida}\n` +
                             `📊 Andamento: ${dados.andamento}\n` +
                             (dados.descricaoProduto ? `📦 Produto: ${dados.descricaoProduto}\n` : '') +
-                            (dados.valorNFD ? `🔢 Qtd. Reclamada: ${dados.valorNFD}\n` : '') +
+                            (dados.valorNFD ? `🔢 Qtd: ${dados.valorNFD}\n` : '') +
                             (dados.nfNfd ? `💰 NF/NFD: ${dados.nfNfd}\n` : '') +
-                            `👤 Registrado por: ${currentUser.username}\n` +
-                            `🕒 Data/Hora: ${dataHora}`
+                            `👤 Por: ${currentUser.username}\n` +
+                            `🕒 ${dataHora}`
                         );
                     }
 
@@ -2671,8 +2716,8 @@
                         `👤 Cliente: ${registro.cliente}\n` +
                         `🏭 Área: ${registro.areaEnvolvida || '-'}\n` +
                         `📊 Andamento: ${registro.andamento || '-'}\n` +
-                        `👤 Excluído por: ${currentUser.username}\n` +
-                        `🕒 Data/Hora: ${dataHora}`
+                        `👤 Por: ${currentUser.username}\n` +
+                        `🕒 ${dataHora}`
                     );
                 } catch (err) {
                     console.error('Erro ao excluir:', err);
@@ -2789,7 +2834,6 @@
                     <div class="modal-detail-item full"><div class="label">Histórico de Etapas</div><div class="value">${htmlTimeline || 'Sem histórico'}</div></div>
                 `;
 
-                // Mostrar/ocultar botões de ação do modal conforme permissão
                 btnEditarDoModal.style.display = isAdmin() ? '' : 'none';
                 btnExcluirDoModal.style.display = isAdmin() ? '' : 'none';
 
@@ -2941,13 +2985,9 @@
                 return v.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
             }
 
-            // ========================================================
-            // LISTA: ATRASOS / PRORROGAÇÃO - SOMENTE LOGÍSTICA
-            // ========================================================
             function popularListaAtrasosProrrogacao(dados) {
                 if (!listaAtrasosProrrogacao) return;
 
-                // Filtra apenas Logística
                 const dadosLogistica = dados.filter(r => (r.areaEnvolvida || '').trim() === 'Logística');
 
                 const comValores = dadosLogistica.filter(r => {
@@ -3016,7 +3056,6 @@
                 destruirGraficos();
                 const dados = filtrarRegistrosDashboard();
 
-                // ---------- Gráfico: Ocorrência por Área ----------
                 const areaMap = new Map();
                 dados.forEach(r => {
                     const area = r.areaEnvolvida || 'Não informada';
@@ -3058,7 +3097,6 @@
                     });
                 }
 
-                // ---------- Gráfico: Quantidade Reclamada por Produto (LARGURA TOTAL) ----------
                 const produtoMap = new Map();
                 dados.forEach(r => {
                     const nome = r.descricaoProduto || r.codItem || 'Sem identificação';
@@ -3128,7 +3166,6 @@
                     });
                 }
 
-                // ---------- Gráfico: Motivos de Ocorrência Resumida ----------
                 const motivoMap = new Map();
                 dados.forEach(r => {
                     const motivo = r.causaResumida || 'Não informado';
@@ -3166,7 +3203,6 @@
                     });
                 }
 
-                // ---------- Gráfico: Abertas vs Concluídas ----------
                 let abertas = 0, concluidas = 0;
                 dados.forEach(r => {
                     if (r.andamento === 'Concluído') concluidas++;
@@ -3204,7 +3240,6 @@
                     }
                 });
 
-                // ---------- Gráfico: Nf / Nfd por Área (com TOTAL) ----------
                 const nfNfdPorArea = new Map();
                 let totalNfNfd = 0;
                 dados.forEach(r => {
@@ -3278,10 +3313,8 @@
                     ctx.fillText('Sem valores de Nf / Nfd nos filtros selecionados', canvasNfNfdArea.width / 2, canvasNfNfdArea.height / 2);
                 }
 
-                // ---------- Gráfico: Atrasos / Dias / Prorrogação (SOMENTE LOGÍSTICA) ----------
                 const atrasosPorArea = new Map();
                 dados.forEach(r => {
-                    // Filtra somente Logística
                     if ((r.areaEnvolvida || '').trim() !== 'Logística') return;
                     const area = 'Logística';
                     if (!atrasosPorArea.has(area)) {
@@ -3296,7 +3329,6 @@
                 const atrasosValores = atrasosLabels.map(a => atrasosPorArea.get(a).atrasos);
                 const prorrogValores = atrasosLabels.map(a => atrasosPorArea.get(a).prorrogacao);
 
-                // Cálculo de médias por reclamação (Logística com atrasos/prorrogação > 0)
                 const dadosLog = dados.filter(r => (r.areaEnvolvida || '').trim() === 'Logística');
                 const registrosComAtraso = dadosLog.filter(r => (parseFloat(r.atrasosDias) || 0) > 0);
                 const registrosComProrrog = dadosLog.filter(r => (parseFloat(r.prorrogacao) || 0) > 0);
@@ -3305,7 +3337,6 @@
                 const mediaAtrasos = registrosComAtraso.length > 0 ? (somaAtrasosLog / registrosComAtraso.length) : 0;
                 const mediaProrrog = registrosComProrrog.length > 0 ? (somaProrrogLog / registrosComProrrog.length) : 0;
 
-                // Atualiza painel de médias
                 if (mediaAtrasosProrrogacao) {
                     if (registrosComAtraso.length > 0 || registrosComProrrog.length > 0) {
                         mediaAtrasosProrrogacao.style.display = 'flex';
@@ -3380,7 +3411,6 @@
                     ctx.fillText('Sem dados da Logística para os filtros selecionados', canvasAtrasosProrrogacao.width / 2, canvasAtrasosProrrogacao.height / 2);
                 }
 
-                // ---------- LISTA: ATRASOS / PRORROGAÇÃO (SOMENTE LOGÍSTICA) ----------
                 popularListaAtrasosProrrogacao(dados);
             }
 
@@ -3414,7 +3444,7 @@
                 const originalOrigem = dashFiltroOrigem.value;
                 dashFiltroOrigem.value = origemFiltro;
                 renderizarDashboard();
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for charts to render
+                await new Promise(resolve => setTimeout(resolve, 1000));
 
                 const dataFiltro = dashFiltroData.value;
                 const mesFiltro = dashFiltroMes.value;
@@ -3554,7 +3584,6 @@
                         boxClone.style.gridColumn = '1 / -1';
                     }
                     if (isProdutos) {
-                        // No PDF mantemos o gráfico de produtos em largura total
                         boxClone.style.gridColumn = '1 / -1';
                     }
 
@@ -3703,7 +3732,6 @@
 
                 document.body.removeChild(container);
 
-                // Restore original filter
                 dashFiltroOrigem.value = originalOrigem;
                 renderizarDashboard();
             }
@@ -3712,7 +3740,6 @@
             // ABAS
             // ========================================================
             function alternarAba(tabId) {
-                // Bloquear acesso a abas restritas
                 if (!isAdmin() && (tabId === 'registro' || tabId === 'usuarios')) {
                     mostrarToast('Acesso restrito a administradores.', 'error');
                     tabId = 'historico';
@@ -3858,19 +3885,18 @@
                             mostrarToast(`🚨 ${emAtraso} reclamação(ões) com mais de ${DIAS_ALERTA_PRAZO} dias em aberto. Verifique!`, 'alert-prazo');
                         }, 800);
 
-                        // NOTIFICAÇÃO WHATSAPP: ALERTA DE PRAZO EXCEDIDO
                         const dataHora = new Date().toLocaleString('pt-BR');
                         const listaAtrasados = registros
                             .filter(r => isAlertaPrazo(r))
                             .slice(0, 10)
-                            .map(r => `• #${r.numRegistro} - ${r.cliente} (${calcularDiasAberto(r)} dias)`)
+                            .map(r => `• #${r.numRegistro} - ${r.cliente} (${calcularDiasAberto(r)}d)`)
                             .join('\n');
                         enviarWhatsApp(
-                            `🚨 *ALERTA DE PRAZO EXCEDIDO - SAC*\n\n` +
-                            `⚠️ Existem *${emAtraso} reclamação(ões)* com mais de ${DIAS_ALERTA_PRAZO} dias em aberto.\n\n` +
+                            `🚨 *ALERTA DE PRAZO EXCEDIDO*\n\n` +
+                            `⚠️ ${emAtraso} reclamação(ões) com mais de ${DIAS_ALERTA_PRAZO} dias em aberto.\n\n` +
                             `📋 *Principais:*\n${listaAtrasados}\n` +
                             (emAtraso > 10 ? `\n... e mais ${emAtraso - 10}.\n` : '') +
-                            `\n🕒 Data/Hora: ${dataHora}`
+                            `\n🕒 ${dataHora}`
                         );
                     }
                 } catch (e) {
@@ -3888,13 +3914,11 @@
                     mostrarLoadingGlobal(false);
                 }
 
-                // Verifica sessão salva
                 try {
                     const savedSession = sessionStorage.getItem('sac_session');
                     if (savedSession) {
                         const parsed = JSON.parse(savedSession);
                         if (parsed && parsed.username) {
-                            // Revalida admin fixo caso tenha sido alterado
                             if (parsed.username === ADMIN_FIXO.username && parsed.tipo === 'admin') {
                                 currentUser = { username: ADMIN_FIXO.username, tipo: 'admin', isHardcoded: true };
                             } else {
@@ -3911,7 +3935,6 @@
                     console.warn('Sessão inválida:', e);
                 }
 
-                // Foca no campo de login caso não esteja logado
                 if (!currentUser && loginUser) {
                     setTimeout(() => loginUser.focus(), 200);
                 }
