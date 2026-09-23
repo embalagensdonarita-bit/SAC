@@ -666,6 +666,11 @@
             border: 1.5px solid #81D4FA;
             box-shadow: 0 2px 8px rgba(2, 119, 189, 0.15);
         }
+        .badge-qualidade {
+            background: #FFF3E0; color: #E65100;
+            border: 1.5px solid #FFB74D;
+            box-shadow: 0 2px 8px rgba(230, 81, 0, 0.15);
+        }
         .modal-overlay {
             position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -831,6 +836,24 @@
         .chart-container-full {
             grid-column: 1 / -1;
         }
+        .media-info {
+            text-align: center;
+            margin: 10px 0 6px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #3C1053;
+            background: #F3E5F5;
+            border: 1.5px dashed #B39DDB;
+            border-radius: 10px;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .media-info span { display: inline-flex; align-items: center; gap: 5px; }
+        .media-info .val-atraso { color: #C62828; font-weight: 800; }
+        .media-info .val-prorrog { color: #E65100; font-weight: 800; }
         .lista-atrasos-prorrogacao {
             margin-top: 14px;
             max-height: 260px;
@@ -883,6 +906,11 @@
         .tabela-atrasos-prorrogacao .val-prorrog {
             color: #E65100;
             font-weight: 800;
+        }
+        .tabela-atrasos-prorrogacao .val-total {
+            color: #3C1053;
+            font-weight: 800;
+            background: #F3E5F5;
         }
         .tabela-atrasos-prorrogacao tfoot {
             background: #F3E5F5;
@@ -1443,20 +1471,13 @@
                         <canvas id="graficoStatus"></canvas>
                     </div>
                     <div class="chart-container">
-                        <h3>Bonificação por Produto (R$)</h3>
-                        <canvas id="graficoValoresProdutos"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <h3>Comparação Quantidade Reclamada vs Bonificação</h3>
-                        <canvas id="graficoComparacaoValores"></canvas>
-                    </div>
-                    <div class="chart-container">
                         <h3>Nf / Nfd por Área Envolvida (Valores R$)</h3>
                         <canvas id="graficoNfNfdArea"></canvas>
                     </div>
                     <div class="chart-container chart-container-full">
                         <h3>Atrasos / Dias / Prorrogação (dias) - Logística</h3>
                         <canvas id="graficoAtrasosProrrogacao"></canvas>
+                        <div id="mediaAtrasosProrrogacao" class="media-info" style="display: none;"></div>
                         <div id="listaAtrasosProrrogacao" class="lista-atrasos-prorrogacao"></div>
                     </div>
                 </div>
@@ -1586,8 +1607,6 @@
             let chartProdutos = null;
             let chartMotivos = null;
             let chartStatus = null;
-            let chartValoresProdutos = null;
-            let chartComparacaoValores = null;
             let chartAtrasosProrrogacao = null;
             let chartNfNfdArea = null;
 
@@ -1653,11 +1672,10 @@
             const canvasProdutos = $('graficoProdutos');
             const canvasMotivos = $('graficoMotivos');
             const canvasStatus = $('graficoStatus');
-            const canvasValoresProdutos = $('graficoValoresProdutos');
-            const canvasComparacaoValores = $('graficoComparacaoValores');
             const canvasAtrasosProrrogacao = $('graficoAtrasosProrrogacao');
             const canvasNfNfdArea = $('graficoNfNfdArea');
             const listaAtrasosProrrogacao = $('listaAtrasosProrrogacao');
+            const mediaAtrasosProrrogacao = $('mediaAtrasosProrrogacao');
 
             const tabButtons = document.querySelectorAll('.tab-btn');
             const tabContents = document.querySelectorAll('.tab-content');
@@ -2169,14 +2187,15 @@
             }
 
             const STATUS_INFO = {
-                'Abertura da RNC':              { badge: 'badge-abertura',      icon: '🔓' },
-                'Aguardando liberação':         { badge: 'badge-liberacao',     icon: '🔐' },
-                'Aguardando fiscal da entrada': { badge: 'badge-fiscal',        icon: '🧾' },
-                'Aguardando financeiro':        { badge: 'badge-financeiro',    icon: '💰' },
-                'Aguardando nota de devolução': { badge: 'badge-aguardando',    icon: '⏳' },
-                'Cliente contabilizando':       { badge: 'badge-contabilizando',icon: '📊' },
-                'Enviar reposição':             { badge: 'badge-reposicao',     icon: '📦' },
-                'Concluído':                    { badge: 'badge-concluido',     icon: '✅' }
+                'Abertura da RNC':                              { badge: 'badge-abertura',      icon: '🔓' },
+                'Aguardando liberação':                         { badge: 'badge-liberacao',     icon: '🔐' },
+                'Aguardando fiscal da entrada':                 { badge: 'badge-fiscal',        icon: '🧾' },
+                'Aguardando financeiro':                        { badge: 'badge-financeiro',    icon: '💰' },
+                'Aguardando devolução do controle de qualidade':{ badge: 'badge-qualidade',     icon: '🔍' },
+                'Aguardando nota de devolução':                 { badge: 'badge-aguardando',    icon: '⏳' },
+                'Cliente contabilizando':                       { badge: 'badge-contabilizando',icon: '📊' },
+                'Enviar reposição':                             { badge: 'badge-reposicao',     icon: '📦' },
+                'Concluído':                                    { badge: 'badge-concluido',     icon: '✅' }
             };
 
             const STATUS_PADRAO = { badge: '', icon: '•' };
@@ -2312,6 +2331,7 @@
                     { valor: 'Aguardando liberação', texto: '🔐 Aguardando liberação' },
                     { valor: 'Aguardando fiscal da entrada', texto: '🧾 Aguardando fiscal da entrada' },
                     { valor: 'Aguardando financeiro', texto: '💰 Aguardando financeiro' },
+                    { valor: 'Aguardando devolução do controle de qualidade', texto: '🔍 Aguardando devolução do controle de qualidade' },
                     { valor: 'Aguardando nota de devolução', texto: '⏳ Aguardando nota de devolução' },
                     { valor: 'Cliente contabilizando', texto: '📊 Cliente contabilizando' },
                     { valor: 'Enviar reposição', texto: '📦 Enviar reposição' },
@@ -2779,23 +2799,9 @@
                 if (chartProdutos) { chartProdutos.destroy(); chartProdutos = null; }
                 if (chartMotivos) { chartMotivos.destroy(); chartMotivos = null; }
                 if (chartStatus) { chartStatus.destroy(); chartStatus = null; }
-                if (chartValoresProdutos) { chartValoresProdutos.destroy(); chartValoresProdutos = null; }
-                if (chartComparacaoValores) { chartComparacaoValores.destroy(); chartComparacaoValores = null; }
                 if (chartAtrasosProrrogacao) { chartAtrasosProrrogacao.destroy(); chartAtrasosProrrogacao = null; }
                 if (chartNfNfdArea) { chartNfNfdArea.destroy(); chartNfNfdArea = null; }
             }
-
-            const BAR_DATALABELS = {
-                anchor: 'end',
-                align: 'end',
-                offset: 6,
-                clamp: true,
-                color: '#3C1053',
-                font: { weight: 'bold', size: 12 },
-                backgroundColor: 'rgba(255,255,255,0.85)',
-                borderRadius: 4,
-                padding: { top: 3, bottom: 3, left: 6, right: 6 }
-            };
 
             function abreviarValor(v) {
                 v = Number(v) || 0;
@@ -2844,11 +2850,13 @@
                 html += '<th>Área</th>';
                 html += '<th style="text-align:center;">Atrasos (dias)</th>';
                 html += '<th style="text-align:center;">Prorrog. (dias)</th>';
+                html += '<th style="text-align:center;">Total (dias)</th>';
                 html += '</tr></thead><tbody>';
 
                 comValores.forEach(r => {
                     const atrasos = parseFloat(r.atrasosDias) || 0;
                     const prorrog = parseFloat(r.prorrogacao) || 0;
+                    const total = atrasos + prorrog;
                     totalAtrasos += atrasos;
                     totalProrrog += prorrog;
 
@@ -2859,6 +2867,7 @@
                     html += `<td>${r.areaEnvolvida || '-'}</td>`;
                     html += `<td style="text-align:center;" class="val-atrasos">${atrasos > 0 ? atrasos : '-'}</td>`;
                     html += `<td style="text-align:center;" class="val-prorrog">${prorrog > 0 ? prorrog : '-'}</td>`;
+                    html += `<td style="text-align:center;" class="val-total">${total > 0 ? total : '-'}</td>`;
                     html += '</tr>';
                 });
 
@@ -2866,6 +2875,7 @@
                 html += `<td colspan="3" style="text-align:right;">TOTAIS (${comValores.length} reclamação(ões))</td>`;
                 html += `<td style="text-align:center;">${totalAtrasos}</td>`;
                 html += `<td style="text-align:center;">${totalProrrog}</td>`;
+                html += `<td style="text-align:center;">${totalAtrasos + totalProrrog}</td>`;
                 html += '</tr></tfoot></table>';
 
                 listaAtrasosProrrogacao.innerHTML = html;
@@ -2926,7 +2936,14 @@
                 });
                 const produtoLabels = Array.from(produtoMap.keys());
                 const produtoValores = Array.from(produtoMap.values());
+                const totalProdutos = produtoValores.reduce((a, b) => a + b, 0);
+                if (produtoLabels.length > 0 && totalProdutos > 0) {
+                    produtoLabels.push('TOTAL');
+                    produtoValores.push(totalProdutos);
+                }
                 if (produtoLabels.length > 0) {
+                    const produtoCores = produtoLabels.map(l => l === 'TOTAL' ? '#3C1053' : '#A78BFA');
+                    const produtoBordas = produtoLabels.map(l => l === 'TOTAL' ? '#1A0033' : '#5B2A86');
                     chartProdutos = new Chart(canvasProdutos.getContext('2d'), {
                         type: 'bar',
                         data: {
@@ -2934,21 +2951,32 @@
                             datasets: [{
                                 label: 'Qtd. Reclamada',
                                 data: produtoValores,
-                                backgroundColor: '#A78BFA',
-                                borderColor: '#5B2A86',
+                                backgroundColor: produtoCores,
+                                borderColor: produtoBordas,
                                 borderWidth: 1,
                                 borderRadius: 6
                             }]
                         },
                         options: {
                             responsive: true, maintainAspectRatio: true, animation: false,
-                            layout: { padding: { top: 34, right: 10, left: 5, bottom: 5 } },
+                            layout: { padding: { top: 60, right: 14, left: 10, bottom: 5 } },
                             plugins: {
                                 legend: { display: false },
-                                datalabels: { ...BAR_DATALABELS, formatter: (v) => abreviarValor(v) }
+                                datalabels: {
+                                    anchor: 'end',
+                                    align: 'end',
+                                    offset: 6,
+                                    clamp: false,
+                                    color: '#3C1053',
+                                    font: { weight: 'bold', size: 10 },
+                                    backgroundColor: 'rgba(255,255,255,0.9)',
+                                    borderRadius: 4,
+                                    padding: { top: 3, bottom: 3, left: 5, right: 5 },
+                                    formatter: (v) => abreviarValor(v)
+                                }
                             },
                             scales: {
-                                y: { beginAtZero: true, ticks: { precision: 0 }, grace: '15%' }
+                                y: { beginAtZero: true, ticks: { precision: 0 }, grace: '22%' }
                             }
                         }
                     });
@@ -3013,101 +3041,24 @@
                     },
                     options: {
                         responsive: true, maintainAspectRatio: true, animation: false,
-                        layout: { padding: { top: 34, right: 10, left: 5, bottom: 5 } },
+                        layout: { padding: { top: 40, right: 10, left: 5, bottom: 5 } },
                         plugins: {
                             legend: { display: false },
-                            datalabels: { ...BAR_DATALABELS, font: { weight: 'bold', size: 14 }, formatter: (v) => v }
+                            datalabels: {
+                                anchor: 'end', align: 'end', offset: 6, clamp: false,
+                                color: '#3C1053',
+                                font: { weight: 'bold', size: 14 },
+                                backgroundColor: 'rgba(255,255,255,0.9)',
+                                borderRadius: 4,
+                                padding: { top: 3, bottom: 3, left: 6, right: 6 },
+                                formatter: (v) => v
+                            }
                         },
-                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grace: '15%' } }
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grace: '22%' } }
                     }
                 });
 
-                // ---------- Gráfico: Bonificação por Produto ----------
-                const bonifMap = new Map();
-                dados.forEach(r => {
-                    const produto = r.descricaoProduto || r.codItem || 'Sem identificação';
-                    const valor = parseFloat(r.bonificacao) || 0;
-                    bonifMap.set(produto, (bonifMap.get(produto) || 0) + valor);
-                });
-                const bonifLabels = Array.from(bonifMap.keys());
-                const bonifValores = Array.from(bonifMap.values());
-                if (bonifLabels.length > 0) {
-                    chartValoresProdutos = new Chart(canvasValoresProdutos.getContext('2d'), {
-                        type: 'bar',
-                        data: {
-                            labels: bonifLabels,
-                            datasets: [{
-                                label: 'Bonificação (R$)',
-                                data: bonifValores,
-                                backgroundColor: '#3C1053',
-                                borderColor: '#1A0033',
-                                borderWidth: 1,
-                                borderRadius: 6
-                            }]
-                        },
-                        options: {
-                            responsive: true, maintainAspectRatio: true, animation: false,
-                            layout: { padding: { top: 38, right: 12, left: 8, bottom: 5 } },
-                            plugins: {
-                                legend: { display: false },
-                                datalabels: { ...BAR_DATALABELS, font: { weight: 'bold', size: 11 }, formatter: (v) => abreviarValor(v) },
-                                tooltip: {
-                                    callbacks: {
-                                        label: (ctx) => 'R$ ' + (ctx.raw || 0).toFixed(2).replace('.', ',')
-                                    }
-                                }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true, grace: '18%',
-                                    ticks: { callback: (v) => abreviarValor(v) }
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // ---------- Gráfico: Comparação Qtd vs Bonificação ----------
-                let totalQtdReclamada = 0, totalBonif = 0;
-                dados.forEach(r => {
-                    totalQtdReclamada += parseFloat(r.valorNFD) || 0;
-                    totalBonif += parseFloat(r.bonificacao) || 0;
-                });
-                chartComparacaoValores = new Chart(canvasComparacaoValores.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: ['Qtd. Reclamada', 'Bonificação'],
-                        datasets: [{
-                            label: 'Valores',
-                            data: [totalQtdReclamada, totalBonif],
-                            backgroundColor: ['#3C1053', '#7C3AED'],
-                            borderColor: ['#1A0033', '#5B2A86'],
-                            borderWidth: 1,
-                            borderRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: true, animation: false,
-                        layout: { padding: { top: 38, right: 12, left: 8, bottom: 5 } },
-                        plugins: {
-                            legend: { display: false },
-                            datalabels: { ...BAR_DATALABELS, font: { weight: 'bold', size: 13 }, formatter: (v) => abreviarValor(v) },
-                            tooltip: {
-                                callbacks: {
-                                    label: (ctx) => ctx.raw.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true, grace: '18%',
-                                ticks: { callback: (v) => abreviarValor(v) }
-                            }
-                        }
-                    }
-                });
-
-                // ---------- Gráfico: Nf / Nfd por Área ----------
+                // ---------- Gráfico: Nf / Nfd por Área (com TOTAL) ----------
                 const nfNfdPorArea = new Map();
                 let totalNfNfd = 0;
                 dados.forEach(r => {
@@ -3120,6 +3071,12 @@
 
                 const nfNfdLabels = Array.from(nfNfdPorArea.keys());
                 const nfNfdValores = Array.from(nfNfdPorArea.values());
+                if (totalNfNfd > 0 && nfNfdLabels.length > 0) {
+                    nfNfdLabels.push('TOTAL');
+                    nfNfdValores.push(totalNfNfd);
+                }
+                const nfNfdCores = nfNfdLabels.map(l => l === 'TOTAL' ? '#3C1053' : '#00897B');
+                const nfNfdBordas = nfNfdLabels.map(l => l === 'TOTAL' ? '#1A0033' : '#00695C');
 
                 if (nfNfdLabels.length > 0) {
                     chartNfNfdArea = new Chart(canvasNfNfdArea.getContext('2d'), {
@@ -3129,20 +3086,27 @@
                             datasets: [{
                                 label: 'Total Nf / Nfd (R$)',
                                 data: nfNfdValores,
-                                backgroundColor: '#00897B',
-                                borderColor: '#00695C',
+                                backgroundColor: nfNfdCores,
+                                borderColor: nfNfdBordas,
                                 borderWidth: 1,
                                 borderRadius: 6
                             }]
                         },
                         options: {
                             responsive: true, maintainAspectRatio: true, animation: false,
-                            layout: { padding: { top: 38, right: 12, left: 8, bottom: 5 } },
+                            layout: { padding: { top: 45, right: 12, left: 8, bottom: 5 } },
                             plugins: {
                                 legend: { display: false },
                                 datalabels: {
-                                    ...BAR_DATALABELS,
+                                    anchor: 'end',
+                                    align: 'end',
+                                    offset: 6,
+                                    clamp: false,
+                                    color: '#3C1053',
                                     font: { weight: 'bold', size: 11 },
+                                    backgroundColor: 'rgba(255,255,255,0.9)',
+                                    borderRadius: 4,
+                                    padding: { top: 3, bottom: 3, left: 5, right: 5 },
                                     formatter: (v) => abreviarValor(v)
                                 },
                                 tooltip: {
@@ -3153,7 +3117,7 @@
                             },
                             scales: {
                                 y: {
-                                    beginAtZero: true, grace: '18%',
+                                    beginAtZero: true, grace: '20%',
                                     ticks: { callback: (v) => abreviarValor(v) }
                                 }
                             }
@@ -3186,7 +3150,30 @@
                 const atrasosValores = atrasosLabels.map(a => atrasosPorArea.get(a).atrasos);
                 const prorrogValores = atrasosLabels.map(a => atrasosPorArea.get(a).prorrogacao);
 
-                if (atrasosLabels.length > 0) {
+                // Cálculo de médias por reclamação (Logística com atrasos/prorrogação > 0)
+                const dadosLog = dados.filter(r => (r.areaEnvolvida || '').trim() === 'Logística');
+                const registrosComAtraso = dadosLog.filter(r => (parseFloat(r.atrasosDias) || 0) > 0);
+                const registrosComProrrog = dadosLog.filter(r => (parseFloat(r.prorrogacao) || 0) > 0);
+                const somaAtrasosLog = registrosComAtraso.reduce((acc, r) => acc + (parseFloat(r.atrasosDias) || 0), 0);
+                const somaProrrogLog = registrosComProrrog.reduce((acc, r) => acc + (parseFloat(r.prorrogacao) || 0), 0);
+                const mediaAtrasos = registrosComAtraso.length > 0 ? (somaAtrasosLog / registrosComAtraso.length) : 0;
+                const mediaProrrog = registrosComProrrog.length > 0 ? (somaProrrogLog / registrosComProrrog.length) : 0;
+
+                // Atualiza painel de médias
+                if (mediaAtrasosProrrogacao) {
+                    if (registrosComAtraso.length > 0 || registrosComProrrog.length > 0) {
+                        mediaAtrasosProrrogacao.style.display = 'flex';
+                        mediaAtrasosProrrogacao.innerHTML = `
+                            <span>📊 <strong>Média de Atrasos:</strong> <span class="val-atraso">${mediaAtrasos.toFixed(1)} dia(s)</span> <small style="color:#5C5C8A;">(base: ${registrosComAtraso.length})</small></span>
+                            <span>📊 <strong>Média de Prorrogação:</strong> <span class="val-prorrog">${mediaProrrog.toFixed(1)} dia(s)</span> <small style="color:#5C5C8A;">(base: ${registrosComProrrog.length})</small></span>
+                        `;
+                    } else {
+                        mediaAtrasosProrrogacao.style.display = 'none';
+                        mediaAtrasosProrrogacao.innerHTML = '';
+                    }
+                }
+
+                if (atrasosLabels.length > 0 && (atrasosValores[0] > 0 || prorrogValores[0] > 0)) {
                     chartAtrasosProrrogacao = new Chart(canvasAtrasosProrrogacao.getContext('2d'), {
                         type: 'bar',
                         data: {
@@ -3212,12 +3199,19 @@
                         },
                         options: {
                             responsive: true, maintainAspectRatio: true, animation: false,
-                            layout: { padding: { top: 38, right: 12, left: 8, bottom: 5 } },
+                            layout: { padding: { top: 40, right: 12, left: 8, bottom: 5 } },
                             plugins: {
                                 legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 14 } },
                                 datalabels: {
-                                    ...BAR_DATALABELS,
-                                    font: { weight: 'bold', size: 10 },
+                                    anchor: 'end',
+                                    align: 'end',
+                                    offset: 6,
+                                    clamp: false,
+                                    color: '#3C1053',
+                                    font: { weight: 'bold', size: 11 },
+                                    backgroundColor: 'rgba(255,255,255,0.9)',
+                                    borderRadius: 4,
+                                    padding: { top: 3, bottom: 3, left: 5, right: 5 },
                                     formatter: (v) => v > 0 ? v : ''
                                 },
                                 tooltip: {
@@ -3227,7 +3221,7 @@
                                 }
                             },
                             scales: {
-                                y: { beginAtZero: true, ticks: { precision: 0 }, grace: '18%' }
+                                y: { beginAtZero: true, ticks: { precision: 0 }, grace: '20%' }
                             }
                         }
                     });
@@ -3421,6 +3415,26 @@
                             img.style.maxHeight = '300px';
                             img.style.objectFit = 'contain';
                             boxClone.appendChild(img);
+                        }
+
+                        const mediaOrig = chartBox.querySelector('#mediaAtrasosProrrogacao');
+                        if (mediaOrig && mediaOrig.innerHTML.trim() && mediaOrig.style.display !== 'none') {
+                            const mediaClone = document.createElement('div');
+                            mediaClone.style.textAlign = 'center';
+                            mediaClone.style.margin = '10px 0 6px';
+                            mediaClone.style.fontSize = '12px';
+                            mediaClone.style.fontWeight = '700';
+                            mediaClone.style.color = '#3C1053';
+                            mediaClone.style.background = '#F3E5F5';
+                            mediaClone.style.border = '1.5px dashed #B39DDB';
+                            mediaClone.style.borderRadius = '10px';
+                            mediaClone.style.padding = '8px 12px';
+                            mediaClone.style.display = 'flex';
+                            mediaClone.style.justifyContent = 'center';
+                            mediaClone.style.gap = '20px';
+                            mediaClone.style.flexWrap = 'wrap';
+                            mediaClone.innerHTML = mediaOrig.innerHTML;
+                            boxClone.appendChild(mediaClone);
                         }
 
                         const listaOrig = chartBox.querySelector('#listaAtrasosProrrogacao');
