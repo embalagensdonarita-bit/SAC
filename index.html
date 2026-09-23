@@ -834,15 +834,13 @@
         }
         .chart-container canvas { max-height: 300px; max-width: 100%; }
         
-        /* ===== GRÁFICO AMPLIADO NA LARGURA: Quantidade Reclamada por Produto ===== */
         .chart-container.chart-container-produtos {
-            grid-column: 1 / -1; /* Ocupa toda a largura da grade */
+            grid-column: 1 / -1;
         }
         .chart-container.chart-container-produtos canvas {
             max-height: 350px !important;
             height: 350px !important;
         }
-        /* ========================================================================= */
 
         .chart-container-full {
             grid-column: 1 / -1;
@@ -981,7 +979,6 @@
         .toast.warning { background: linear-gradient(135deg, #E65100 0%, #F57C00 100%); }
         .toast.alert-prazo { background: linear-gradient(135deg, #B71C1C 0%, #E53935 100%); }
 
-        /* ===== LOGIN ===== */
         .login-overlay {
             position: fixed;
             inset: 0;
@@ -1178,7 +1175,6 @@
 </head>
 <body>
 
-    <!-- ============ TELA DE LOGIN ============ -->
     <div class="login-overlay" id="loginOverlay">
         <div class="login-box">
             <div class="login-logo">📦</div>
@@ -1244,7 +1240,6 @@
             <button class="tab-btn" data-tab="usuarios" id="tabBtnUsuarios">👥 Usuários</button>
         </div>
 
-        <!-- ===== ABA: REGISTRO ===== -->
         <div class="tab-content active" id="tab-registro">
             <div class="card">
                 <div class="card-title">
@@ -1375,7 +1370,6 @@
             </div>
         </div>
 
-        <!-- ===== ABA: HISTÓRICO ===== -->
         <div class="tab-content" id="tab-historico">
             <div class="card">
                 <div class="card-title">
@@ -1429,7 +1423,6 @@
             </div>
         </div>
 
-        <!-- ===== ABA: DASHBOARD ===== -->
         <div class="tab-content" id="tab-dashboard">
             <div class="card">
                 <div class="card-title">
@@ -1481,7 +1474,6 @@
                         <h3>Ocorrência por Área</h3>
                         <canvas id="graficoArea"></canvas>
                     </div>
-                    <!-- ===== GRÁFICO AMPLIADO NA LARGURA: Quantidade Reclamada por Produto ===== -->
                     <div class="chart-container chart-container-produtos">
                         <h3>Quantidade Reclamada por Produto</h3>
                         <canvas id="graficoProdutos"></canvas>
@@ -1508,7 +1500,6 @@
             </div>
         </div>
 
-        <!-- ===== ABA: USUÁRIOS (ADMIN) ===== -->
         <div class="tab-content" id="tab-usuarios">
             <div class="card">
                 <div class="card-title">
@@ -1561,7 +1552,6 @@
         </div>
     </div>
 
-    <!-- Modal -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
             <div class="modal-header">
@@ -1584,77 +1574,43 @@
             'use strict';
 
             // ========================================================
-            // CONFIGURAÇÃO CALLMEBOT (WHATSAPP)
+            // CONFIGURAÇÃO CALLMEBOT (WHATSAPP) - ENVIO INSTANTÂNEO
             // ========================================================
             const CALLMEBOT_PHONE = '5511972376348';
             const CALLMEBOT_APIKEY = '8294015';
 
             /**
              * Envia notificação via WhatsApp usando CallMeBot.
-             * Utiliza múltiplos métodos para garantir a entrega:
-             * 1) fetch no-cors (padrão)
-             * 2) Image beacon (backup, dispara após 800ms)
+             * MÉTODO ÚNICO E IMEDIATO: Image beacon (mais rápido e confiável
+             * para APIs que aceitam apenas GET simples).
+             * Dispara instantaneamente, sem delays, sem filas, sem espera.
              */
             function enviarWhatsApp(mensagem) {
                 try {
-                    // Codifica a mensagem e limita tamanho
                     let texto = encodeURIComponent(mensagem);
-                    const MAX_LEN = 1400;
-                    if (texto.length > MAX_LEN) {
-                        texto = texto.substring(0, MAX_LEN);
-                    }
+                    if (texto.length > 1500) texto = texto.substring(0, 1500);
 
-                    const baseUrl = `https://api.callmebot.com/whatsapp.php?phone=${CALLMEBOT_PHONE}&apikey=${CALLMEBOT_APIKEY}&text=${texto}`;
+                    const url = `https://api.callmebot.com/whatsapp.php?phone=${CALLMEBOT_PHONE}&apikey=${CALLMEBOT_APIKEY}&text=${texto}&_=${Date.now()}`;
 
-                    console.log('%c📱 [WhatsApp] Enviando notificação...', 'color:#25D366;font-weight:bold;');
-                    console.log('   →', mensagem.substring(0, 120).replace(/\n/g, ' | '));
-
-                    // MÉTODO 1: fetch no-cors
-                    fetch(baseUrl, {
-                        method: 'GET',
-                        mode: 'no-cors',
-                        cache: 'no-store',
-                        redirect: 'follow'
-                    }).then(() => {
-                        console.log('%c✅ [WhatsApp] Requisição fetch concluída.', 'color:#25D366;');
-                    }).catch(err => {
-                        console.warn('⚠️ [WhatsApp] fetch falhou, usando backup:', err);
-                        _enviarWhatsAppBeacon(baseUrl);
-                    });
-
-                    // MÉTODO 2 (backup): Image beacon após pequeno delay
-                    // Garante entrega caso o fetch seja bloqueado silenciosamente
-                    setTimeout(() => {
-                        _enviarWhatsAppBeacon(baseUrl);
-                    }, 1200);
-
-                } catch (err) {
-                    console.error('❌ [WhatsApp] Erro geral:', err);
-                }
-            }
-
-            function _enviarWhatsAppBeacon(url) {
-                try {
-                    const img = new Image(1, 1);
+                    // Dispara IMEDIATAMENTE — sem setTimeout, sem delay
+                    const img = new Image();
                     img.style.position = 'absolute';
                     img.style.left = '-9999px';
-                    img.style.top = '-9999px';
                     img.style.width = '1px';
                     img.style.height = '1px';
-                    img.onload = img.onerror = function() {
-                        if (this.parentNode) this.parentNode.removeChild(this);
-                    };
-                    img.src = url + '&_t=' + Date.now();
-                    document.body.appendChild(img);
-                    setTimeout(() => {
-                        if (img.parentNode) img.parentNode.removeChild(img);
-                    }, 15000);
-                } catch (e) {
-                    console.warn('⚠️ [WhatsApp] beacon falhou:', e);
+                    img.src = url;
+
+                    // Também dispara fetch no-cors em paralelo (redundância instantânea)
+                    try {
+                        fetch(url, { mode: 'no-cors', cache: 'no-store', keepalive: true }).catch(() => {});
+                    } catch (e) { /* ignora */ }
+
+                    console.log('%c📱 WhatsApp disparado →', 'color:#25D366;font-weight:bold;', mensagem.substring(0, 100).replace(/\n/g, ' | '));
+                } catch (err) {
+                    console.warn('Erro ao enviar WhatsApp:', err);
                 }
             }
 
-            // Expor para testes via console: enviarWhatsApp("teste")
             window.enviarWhatsApp = enviarWhatsApp;
 
             // ========================================================
@@ -1686,14 +1642,10 @@
             const LIMITE_REGISTROS = 2000;
             const DIAS_ALERTA_PRAZO = 10;
 
-            // Admin fixo hardcoded
             const ADMIN_FIXO = { username: 'Duda', password: '1304', tipo: 'admin' };
 
             Chart.register(ChartDataLabels);
 
-            // ========================================================
-            // ESTADO
-            // ========================================================
             let registros = [];
             let usuarios = [];
             let registroEmEdicao = null;
@@ -1708,9 +1660,6 @@
             let chartAtrasosProrrogacao = null;
             let chartNfNfdArea = null;
 
-            // ========================================================
-            // ELEMENTOS DOM
-            // ========================================================
             const $ = (id) => document.getElementById(id);
 
             const form = $('formNaoConformidade');
@@ -1795,9 +1744,6 @@
             const tabelaUsuarios = $('tabelaUsuarios');
             const tabBtnUsuarios = $('tabBtnUsuarios');
 
-            // ========================================================
-            // LISTA DE PRODUTOS
-            // ========================================================
             const listaProdutos = [
                 { codigo: '100001', descricao: 'D32 R PR' },
                 { codigo: '100002', descricao: 'D32 R BR' },
@@ -1903,9 +1849,6 @@
                 mapaDescricaoParaCodigo[descricao] = codigo;
             });
 
-            // ========================================================
-            // AUTENTICAÇÃO
-            // ========================================================
             function isAdmin() {
                 return !!(currentUser && currentUser.tipo === 'admin');
             }
@@ -2025,13 +1968,12 @@
                 }
                 mostrarToast(`Bem-vindo(a), ${currentUser.username}!`, 'success');
 
-                // NOTIFICAÇÃO WHATSAPP: LOGIN
                 const agora = new Date().toLocaleString('pt-BR');
                 enviarWhatsApp(
                     `🔓 *LOGIN NO SISTEMA SAC*\n\n` +
                     `👤 Usuário: ${currentUser.username}\n` +
                     `🎫 Tipo: ${isAdmin() ? 'Administrador' : 'Padrão'}\n` +
-                    `🕒 Data/Hora: ${agora}`
+                    `🕒 ${agora}`
                 );
             }
 
@@ -2091,18 +2033,14 @@
                 if (btnGerarPDF) btnGerarPDF.style.display = '';
                 alternarAba('registro');
 
-                // NOTIFICAÇÃO WHATSAPP: LOGOUT
                 const agora = new Date().toLocaleString('pt-BR');
                 enviarWhatsApp(
                     `🚪 *LOGOUT DO SISTEMA SAC*\n\n` +
                     `👤 Usuário: ${usuarioSaindo}\n` +
-                    `🕒 Data/Hora: ${agora}`
+                    `🕒 ${agora}`
                 );
             }
 
-            // ========================================================
-            // CRUD DE USUÁRIOS
-            // ========================================================
             async function salvarUsuario(e) {
                 e.preventDefault();
                 if (!isAdmin()) {
@@ -2135,14 +2073,13 @@
                     userTipo.value = 'padrao';
                     mostrarToast(`Usuário "${username}" criado com sucesso!`, 'success');
 
-                    // NOTIFICAÇÃO WHATSAPP: NOVO USUÁRIO
                     const agora = new Date().toLocaleString('pt-BR');
                     enviarWhatsApp(
                         `👥 *NOVO USUÁRIO CRIADO*\n\n` +
                         `👤 Usuário: ${username}\n` +
                         `🎫 Tipo: ${tipo === 'admin' ? 'Administrador' : 'Padrão'}\n` +
                         `🔑 Criado por: ${currentUser.username}\n` +
-                        `🕒 Data/Hora: ${agora}`
+                        `🕒 ${agora}`
                     );
                 } catch (err) {
                     console.error('Erro ao criar usuário:', err);
@@ -2161,14 +2098,13 @@
                     renderizarUsuarios();
                     mostrarToast(`Usuário "${u.username}" excluído.`, 'success');
 
-                    // NOTIFICAÇÃO WHATSAPP: USUÁRIO EXCLUÍDO
                     const agora = new Date().toLocaleString('pt-BR');
                     enviarWhatsApp(
                         `🗑️ *USUÁRIO EXCLUÍDO*\n\n` +
                         `👤 Usuário: ${u.username}\n` +
                         `🎫 Tipo: ${u.tipo === 'admin' ? 'Administrador' : 'Padrão'}\n` +
                         `🔑 Excluído por: ${currentUser.username}\n` +
-                        `🕒 Data/Hora: ${agora}`
+                        `🕒 ${agora}`
                     );
                 } catch (err) {
                     console.error('Erro ao excluir usuário:', err);
@@ -2184,9 +2120,6 @@
                 });
             }
 
-            // ========================================================
-            // UTILITÁRIOS
-            // ========================================================
             function normalizarTexto(texto) {
                 return String(texto || '').trim().replace(/\s+/g, ' ');
             }
@@ -2373,9 +2306,6 @@
                 globalLoading.classList.toggle('active', !!mostrar);
             }
 
-            // ========================================================
-            // FIREBASE - OPERAÇÕES
-            // ========================================================
             async function carregarRegistrosDoFirebase() {
                 const querySnapshot = await db.collection(COLLECTION_NAME)
                     .limit(LIMITE_REGISTROS)
@@ -2414,9 +2344,6 @@
                 await db.collection(COLLECTION_NAME).doc(docId).delete();
             }
 
-            // ========================================================
-            // CRUD REGISTROS
-            // ========================================================
             function atualizarStats() {
                 statTotal.textContent = registros.length;
                 let pendentes = 0, concluidos = 0, emAtraso = 0;
@@ -2607,6 +2534,22 @@
                             });
                         }
 
+                        // Dispara WhatsApp IMEDIATAMENTE (antes de salvar no Firebase)
+                        const dataHora = new Date().toLocaleString('pt-BR');
+                        let msgWhats = `✏️ *REGISTRO ATUALIZADO*\n\n` +
+                            `📋 Nº: #${dados.numRegistro}\n` +
+                            `👤 Cliente: ${dados.cliente}\n` +
+                            `🏭 Área: ${dados.areaEnvolvida}\n` +
+                            `🔍 Origem: ${dados.origem}\n` +
+                            `📌 Causa: ${dados.causaResumida}\n` +
+                            `📊 Andamento: ${dados.andamento}\n`;
+                        if (mudouAndamento) {
+                            msgWhats += `🔄 *Mudança:* ${original.andamento} → ${dados.andamento}\n`;
+                        }
+                        msgWhats += `👤 Por: ${currentUser.username}\n` +
+                            `🕒 ${dataHora}`;
+                        enviarWhatsApp(msgWhats);
+
                         await salvarRegistroNoFirebase(dadosParaSalvar, original.docId);
 
                         registros[idx] = { ...dadosParaSalvar, docId: original.docId };
@@ -2618,22 +2561,6 @@
 
                         mostrarToast(`Registro #${dados.numRegistro} atualizado com sucesso!`, 'success');
                         registroEmEdicao = null;
-
-                        // NOTIFICAÇÃO WHATSAPP: REGISTRO ATUALIZADO
-                        const dataHora = new Date().toLocaleString('pt-BR');
-                        let msgWhats = `✏️ *REGISTRO ATUALIZADO*\n\n` +
-                            `📋 Nº Registro: #${dados.numRegistro}\n` +
-                            `👤 Cliente: ${dados.cliente}\n` +
-                            `🏭 Área: ${dados.areaEnvolvida}\n` +
-                            `🔍 Origem: ${dados.origem}\n` +
-                            `📌 Causa: ${dados.causaResumida}\n` +
-                            `📊 Andamento: ${dados.andamento}\n`;
-                        if (mudouAndamento) {
-                            msgWhats += `🔄 *Mudança:* ${original.andamento} → ${dados.andamento}\n`;
-                        }
-                        msgWhats += `👤 Por: ${currentUser.username}\n` +
-                            `🕒 Data/Hora: ${dataHora}`;
-                        enviarWhatsApp(msgWhats);
                     } else {
                         const novoRegistro = {
                             ...dados,
@@ -2642,24 +2569,14 @@
                                 { etapa: dados.andamento || 'Abertura da RNC', timestamp: agora }
                             ]
                         };
-                        const novoDocId = await salvarRegistroNoFirebase(novoRegistro);
 
-                        registros.push({ ...novoRegistro, docId: novoDocId });
-                        registros.sort((a, b) => {
-                            const numA = parseInt(a.numRegistro) || 0;
-                            const numB = parseInt(b.numRegistro) || 0;
-                            return numB - numA;
-                        });
-
-                        mostrarToast(`Registro #${dados.numRegistro} salvo com sucesso!`, 'success');
-
-                        // NOTIFICAÇÃO WHATSAPP: NOVO REGISTRO
+                        // Dispara WhatsApp IMEDIATAMENTE (antes de salvar no Firebase)
                         const dataHora = new Date().toLocaleString('pt-BR');
                         enviarWhatsApp(
                             `🚨 *NOVA NÃO CONFORMIDADE*\n\n` +
-                            `📋 Nº Registro: #${dados.numRegistro}\n` +
+                            `📋 Nº: #${dados.numRegistro}\n` +
                             `👤 Cliente: ${dados.cliente}\n` +
-                            `📅 Data Ocorrência: ${formatarData(dados.dataOcorrencia)}\n` +
+                            `📅 Data: ${formatarData(dados.dataOcorrencia)}\n` +
                             `🏭 Área: ${dados.areaEnvolvida}\n` +
                             `🔍 Origem: ${dados.origem}\n` +
                             `📌 Causa: ${dados.causaResumida}\n` +
@@ -2670,6 +2587,17 @@
                             `👤 Por: ${currentUser.username}\n` +
                             `🕒 ${dataHora}`
                         );
+
+                        const novoDocId = await salvarRegistroNoFirebase(novoRegistro);
+
+                        registros.push({ ...novoRegistro, docId: novoDocId });
+                        registros.sort((a, b) => {
+                            const numA = parseInt(a.numRegistro) || 0;
+                            const numB = parseInt(b.numRegistro) || 0;
+                            return numB - numA;
+                        });
+
+                        mostrarToast(`Registro #${dados.numRegistro} salvo com sucesso!`, 'success');
                     }
 
                     atualizarStats();
@@ -2699,6 +2627,18 @@
                 if (!confirm(`Tem certeza que deseja excluir o registro #${registro.numRegistro} do cliente ${registro.cliente}?`)) return;
 
                 try {
+                    // Dispara WhatsApp IMEDIATAMENTE
+                    const dataHora = new Date().toLocaleString('pt-BR');
+                    enviarWhatsApp(
+                        `🗑️ *REGISTRO EXCLUÍDO*\n\n` +
+                        `📋 Nº: #${registro.numRegistro}\n` +
+                        `👤 Cliente: ${registro.cliente}\n` +
+                        `🏭 Área: ${registro.areaEnvolvida || '-'}\n` +
+                        `📊 Andamento: ${registro.andamento || '-'}\n` +
+                        `👤 Por: ${currentUser.username}\n` +
+                        `🕒 ${dataHora}`
+                    );
+
                     if (registro.docId) {
                         await excluirRegistroDoFirebase(registro.docId);
                     }
@@ -2707,18 +2647,6 @@
                     renderizarTabela();
                     fecharModal();
                     mostrarToast(`Registro #${registro.numRegistro} excluído!`, 'success');
-
-                    // NOTIFICAÇÃO WHATSAPP: REGISTRO EXCLUÍDO
-                    const dataHora = new Date().toLocaleString('pt-BR');
-                    enviarWhatsApp(
-                        `🗑️ *REGISTRO EXCLUÍDO*\n\n` +
-                        `📋 Nº Registro: #${registro.numRegistro}\n` +
-                        `👤 Cliente: ${registro.cliente}\n` +
-                        `🏭 Área: ${registro.areaEnvolvida || '-'}\n` +
-                        `📊 Andamento: ${registro.andamento || '-'}\n` +
-                        `👤 Por: ${currentUser.username}\n` +
-                        `🕒 ${dataHora}`
-                    );
                 } catch (err) {
                     console.error('Erro ao excluir:', err);
                     mostrarToast('Erro ao excluir do Firebase! Verifique sua conexão.', 'error');
@@ -2845,9 +2773,6 @@
                 registroSelecionado = null;
             }
 
-            // ========================================================
-            // TABELA
-            // ========================================================
             function renderizarTabela() {
                 const dataFiltro = filtroData.value;
                 const mesFiltro = filtroMes.value;
@@ -2952,9 +2877,6 @@
                 else if (action === 'excluir') excluirRegistro(idx);
             });
 
-            // ========================================================
-            // DASHBOARD
-            // ========================================================
             function filtrarRegistrosDashboard() {
                 const dataFiltro = dashFiltroData.value;
                 const mesFiltro = dashFiltroMes.value;
@@ -3414,9 +3336,6 @@
                 popularListaAtrasosProrrogacao(dados);
             }
 
-            // ========================================================
-            // GERAR PDF
-            // ========================================================
             async function gerarPDFDashboard() {
                 if (!isAdmin()) {
                     mostrarToast('Apenas administradores podem gerar PDF.', 'error');
@@ -3736,9 +3655,6 @@
                 renderizarDashboard();
             }
 
-            // ========================================================
-            // ABAS
-            // ========================================================
             function alternarAba(tabId) {
                 if (!isAdmin() && (tabId === 'registro' || tabId === 'usuarios')) {
                     mostrarToast('Acesso restrito a administradores.', 'error');
@@ -3758,9 +3674,6 @@
                 btn.addEventListener('click', () => alternarAba(btn.dataset.tab));
             });
 
-            // ========================================================
-            // EVENTOS
-            // ========================================================
             form.addEventListener('submit', salvarRegistro);
             formLogin.addEventListener('submit', processarLogin);
             formUsuario.addEventListener('submit', salvarUsuario);
@@ -3805,9 +3718,6 @@
 
             btnGerarPDF.addEventListener('click', gerarPDFDashboard);
 
-            // ========================================================
-            // AUTO-PREENCHIMENTO CÓDIGO ↔ DESCRIÇÃO
-            // ========================================================
             codItemInput.addEventListener('input', function() {
                 const codigoDigitado = normalizarTexto(this.value);
                 if (codigoDigitado && mapaCodigoParaDescricao[codigoDigitado]) {
@@ -3854,9 +3764,6 @@
                 }
             });
 
-            // ========================================================
-            // INICIALIZAÇÃO
-            // ========================================================
             async function iniciar() {
                 mostrarLoadingGlobal(true, 'Carregando dados do Firebase...');
                 try {
