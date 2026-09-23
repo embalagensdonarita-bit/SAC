@@ -1584,6 +1584,26 @@
             'use strict';
 
             // ========================================================
+            // CONFIGURAÇÃO CALLMEBOT (WHATSAPP)
+            // ========================================================
+            const CALLMEBOT_PHONE = '5511972376348';
+            const CALLMEBOT_APIKEY = '8294015';
+
+            function enviarWhatsApp(mensagem) {
+                try {
+                    const texto = encodeURIComponent(mensagem);
+                    const url = `https://api.callmebot.com/whatsapp.php?phone=${CALLMEBOT_PHONE}&text=${texto}&apikey=${CALLMEBOT_APIKEY}`;
+                    // Usa imagem fantasma para evitar problemas de CORS
+                    const img = new Image();
+                    img.src = url;
+                    // Fallback adicional via fetch no-cors
+                    fetch(url, { mode: 'no-cors', cache: 'no-store' }).catch(() => {});
+                } catch (err) {
+                    console.warn('Erro ao enviar WhatsApp:', err);
+                }
+            }
+
+            // ========================================================
             // CONFIGURAÇÃO FIREBASE
             // ========================================================
             const firebaseConfig = {
@@ -1958,6 +1978,15 @@
                     carregarUsuariosDoFirebase().then(renderizarUsuarios);
                 }
                 mostrarToast(`Bem-vindo(a), ${currentUser.username}!`, 'success');
+
+                // NOTIFICAÇÃO WHATSAPP: LOGIN
+                const agora = new Date().toLocaleString('pt-BR');
+                enviarWhatsApp(
+                    `🔓 *LOGIN NO SISTEMA SAC*\n\n` +
+                    `👤 Usuário: ${currentUser.username}\n` +
+                    `🎫 Tipo: ${isAdmin() ? 'Administrador' : 'Padrão'}\n` +
+                    `🕒 Data/Hora: ${agora}`
+                );
             }
 
             async function processarLogin(e) {
@@ -2002,6 +2031,7 @@
 
             function fazerLogout() {
                 if (!confirm('Deseja sair do sistema?')) return;
+                const usuarioSaindo = currentUser ? currentUser.username : 'desconhecido';
                 currentUser = null;
                 try { sessionStorage.removeItem('sac_session'); } catch (err) { /* ignora */ }
                 loginOverlay.classList.remove('hidden');
@@ -2015,6 +2045,14 @@
                 });
                 if (btnGerarPDF) btnGerarPDF.style.display = '';
                 alternarAba('registro');
+
+                // NOTIFICAÇÃO WHATSAPP: LOGOUT
+                const agora = new Date().toLocaleString('pt-BR');
+                enviarWhatsApp(
+                    `🚪 *LOGOUT DO SISTEMA SAC*\n\n` +
+                    `👤 Usuário: ${usuarioSaindo}\n` +
+                    `🕒 Data/Hora: ${agora}`
+                );
             }
 
             // ========================================================
@@ -2051,6 +2089,16 @@
                     formUsuario.reset();
                     userTipo.value = 'padrao';
                     mostrarToast(`Usuário "${username}" criado com sucesso!`, 'success');
+
+                    // NOTIFICAÇÃO WHATSAPP: NOVO USUÁRIO
+                    const agora = new Date().toLocaleString('pt-BR');
+                    enviarWhatsApp(
+                        `👥 *NOVO USUÁRIO CRIADO*\n\n` +
+                        `👤 Usuário: ${username}\n` +
+                        `🎫 Tipo: ${tipo === 'admin' ? 'Administrador' : 'Padrão'}\n` +
+                        `🔑 Criado por: ${currentUser.username}\n` +
+                        `🕒 Data/Hora: ${agora}`
+                    );
                 } catch (err) {
                     console.error('Erro ao criar usuário:', err);
                     mostrarToast('Erro ao criar usuário. Verifique as regras do Firestore.', 'error');
@@ -2067,6 +2115,16 @@
                     usuarios = usuarios.filter(x => x.docId !== docId);
                     renderizarUsuarios();
                     mostrarToast(`Usuário "${u.username}" excluído.`, 'success');
+
+                    // NOTIFICAÇÃO WHATSAPP: USUÁRIO EXCLUÍDO
+                    const agora = new Date().toLocaleString('pt-BR');
+                    enviarWhatsApp(
+                        `🗑️ *USUÁRIO EXCLUÍDO*\n\n` +
+                        `👤 Usuário: ${u.username}\n` +
+                        `🎫 Tipo: ${u.tipo === 'admin' ? 'Administrador' : 'Padrão'}\n` +
+                        `🔑 Excluído por: ${currentUser.username}\n` +
+                        `🕒 Data/Hora: ${agora}`
+                    );
                 } catch (err) {
                     console.error('Erro ao excluir usuário:', err);
                     mostrarToast('Erro ao excluir usuário.', 'error');
@@ -2515,6 +2573,22 @@
 
                         mostrarToast(`Registro #${dados.numRegistro} atualizado com sucesso!`, 'success');
                         registroEmEdicao = null;
+
+                        // NOTIFICAÇÃO WHATSAPP: REGISTRO ATUALIZADO
+                        const dataHora = new Date().toLocaleString('pt-BR');
+                        let msgWhats = `✏️ *REGISTRO ATUALIZADO*\n\n` +
+                            `📋 Nº Registro: #${dados.numRegistro}\n` +
+                            `👤 Cliente: ${dados.cliente}\n` +
+                            `🏭 Área: ${dados.areaEnvolvida}\n` +
+                            `🔍 Origem: ${dados.origem}\n` +
+                            `📌 Causa: ${dados.causaResumida}\n` +
+                            `📊 Andamento: ${dados.andamento}\n`;
+                        if (mudouAndamento) {
+                            msgWhats += `🔄 *Mudança de Status:* ${original.andamento} → ${dados.andamento}\n`;
+                        }
+                        msgWhats += `👤 Por: ${currentUser.username}\n` +
+                            `🕒 Data/Hora: ${dataHora}`;
+                        enviarWhatsApp(msgWhats);
                     } else {
                         const novoRegistro = {
                             ...dados,
@@ -2533,6 +2607,24 @@
                         });
 
                         mostrarToast(`Registro #${dados.numRegistro} salvo com sucesso!`, 'success');
+
+                        // NOTIFICAÇÃO WHATSAPP: NOVO REGISTRO
+                        const dataHora = new Date().toLocaleString('pt-BR');
+                        enviarWhatsApp(
+                            `🚨 *NOVA NÃO CONFORMIDADE REGISTRADA*\n\n` +
+                            `📋 Nº Registro: #${dados.numRegistro}\n` +
+                            `👤 Cliente: ${dados.cliente}\n` +
+                            `📅 Data Ocorrência: ${formatarData(dados.dataOcorrencia)}\n` +
+                            `🏭 Área: ${dados.areaEnvolvida}\n` +
+                            `🔍 Origem: ${dados.origem}\n` +
+                            `📌 Causa: ${dados.causaResumida}\n` +
+                            `📊 Andamento: ${dados.andamento}\n` +
+                            (dados.descricaoProduto ? `📦 Produto: ${dados.descricaoProduto}\n` : '') +
+                            (dados.valorNFD ? `🔢 Qtd. Reclamada: ${dados.valorNFD}\n` : '') +
+                            (dados.nfNfd ? `💰 NF/NFD: ${dados.nfNfd}\n` : '') +
+                            `👤 Registrado por: ${currentUser.username}\n` +
+                            `🕒 Data/Hora: ${dataHora}`
+                        );
                     }
 
                     atualizarStats();
@@ -2570,6 +2662,18 @@
                     renderizarTabela();
                     fecharModal();
                     mostrarToast(`Registro #${registro.numRegistro} excluído!`, 'success');
+
+                    // NOTIFICAÇÃO WHATSAPP: REGISTRO EXCLUÍDO
+                    const dataHora = new Date().toLocaleString('pt-BR');
+                    enviarWhatsApp(
+                        `🗑️ *REGISTRO EXCLUÍDO*\n\n` +
+                        `📋 Nº Registro: #${registro.numRegistro}\n` +
+                        `👤 Cliente: ${registro.cliente}\n` +
+                        `🏭 Área: ${registro.areaEnvolvida || '-'}\n` +
+                        `📊 Andamento: ${registro.andamento || '-'}\n` +
+                        `👤 Excluído por: ${currentUser.username}\n` +
+                        `🕒 Data/Hora: ${dataHora}`
+                    );
                 } catch (err) {
                     console.error('Erro ao excluir:', err);
                     mostrarToast('Erro ao excluir do Firebase! Verifique sua conexão.', 'error');
@@ -3753,6 +3857,21 @@
                         setTimeout(() => {
                             mostrarToast(`🚨 ${emAtraso} reclamação(ões) com mais de ${DIAS_ALERTA_PRAZO} dias em aberto. Verifique!`, 'alert-prazo');
                         }, 800);
+
+                        // NOTIFICAÇÃO WHATSAPP: ALERTA DE PRAZO EXCEDIDO
+                        const dataHora = new Date().toLocaleString('pt-BR');
+                        const listaAtrasados = registros
+                            .filter(r => isAlertaPrazo(r))
+                            .slice(0, 10)
+                            .map(r => `• #${r.numRegistro} - ${r.cliente} (${calcularDiasAberto(r)} dias)`)
+                            .join('\n');
+                        enviarWhatsApp(
+                            `🚨 *ALERTA DE PRAZO EXCEDIDO - SAC*\n\n` +
+                            `⚠️ Existem *${emAtraso} reclamação(ões)* com mais de ${DIAS_ALERTA_PRAZO} dias em aberto.\n\n` +
+                            `📋 *Principais:*\n${listaAtrasados}\n` +
+                            (emAtraso > 10 ? `\n... e mais ${emAtraso - 10}.\n` : '') +
+                            `\n🕒 Data/Hora: ${dataHora}`
+                        );
                     }
                 } catch (e) {
                     console.error('❌ Erro ao carregar do Firebase:', e);
