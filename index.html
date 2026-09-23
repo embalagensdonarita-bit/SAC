@@ -1570,6 +1570,43 @@
             // Admin fixo hardcoded
             const ADMIN_FIXO = { username: 'Duda', password: '1304', tipo: 'admin' };
 
+            // ========================================================
+            // CONFIGURAÇÃO WHATSAPP (CallMeBot)
+            // ========================================================
+            const WHATSAPP_CONFIG = {
+                // Número de destino (com código do país) que receberá as notificações
+                destino: '5511972376348',
+                // API Key do número cadastrado (553599922852)
+                apiKey: 'WUn4PbuvQRN2',
+                // Ativa/desativa o envio global
+                enabled: true
+            };
+
+            // Envia mensagem via CallMeBot (WhatsApp)
+            // Fire-and-forget: nunca quebra o fluxo do sistema
+            function enviarWhatsApp(mensagem) {
+                if (!WHATSAPP_CONFIG.enabled) return;
+                try {
+                    const texto = String(mensagem || '').substring(0, 1500);
+                    const url = 'https://api.callmebot.com/whatsapp.php'
+                        + '?phone=' + encodeURIComponent(WHATSAPP_CONFIG.destino)
+                        + '&text=' + encodeURIComponent(texto)
+                        + '&apikey=' + encodeURIComponent(WHATSAPP_CONFIG.apiKey);
+
+                    // Usa Image() para evitar problemas de CORS em alguns navegadores
+                    const img = new Image();
+                    img.onerror = function() { /* ignora */ };
+                    img.src = url;
+
+                    // Fallback com fetch no-cors
+                    if (typeof fetch === 'function') {
+                        fetch(url, { mode: 'no-cors', cache: 'no-store' }).catch(function() { /* ignora */ });
+                    }
+                } catch (e) {
+                    console.warn('Erro ao enviar WhatsApp:', e);
+                }
+            }
+
             Chart.register(ChartDataLabels);
 
             // ========================================================
@@ -1948,6 +1985,15 @@
                     loginUser.value = '';
                     loginPass.value = '';
                     finalizarLogin();
+
+                    // Notifica login via WhatsApp
+                    enviarWhatsApp(
+                        '🔐 *SAC DONA RITA EMBALAGENS*\n' +
+                        '👤 *Login realizado*\n' +
+                        'Usuário: ' + currentUser.username + '\n' +
+                        'Tipo: ' + (isAdmin() ? 'Administrador' : 'Padrão') + '\n' +
+                        '🕐 ' + new Date().toLocaleString('pt-BR')
+                    );
                 } catch (err) {
                     console.error('Erro no login:', err);
                     loginError.textContent = 'Erro ao validar login. Tente novamente.';
@@ -1959,6 +2005,7 @@
 
             function fazerLogout() {
                 if (!confirm('Deseja sair do sistema?')) return;
+                const nomeAnterior = currentUser ? currentUser.username : '-';
                 currentUser = null;
                 try { sessionStorage.removeItem('sac_session'); } catch (err) { /* ignora */ }
                 loginOverlay.classList.remove('hidden');
@@ -1972,6 +2019,14 @@
                 });
                 if (btnGerarPDF) btnGerarPDF.style.display = '';
                 alternarAba('registro');
+
+                // Notifica logout via WhatsApp
+                enviarWhatsApp(
+                    '🚪 *SAC DONA RITA EMBALAGENS*\n' +
+                    '👤 *Logout realizado*\n' +
+                    'Usuário: ' + nomeAnterior + '\n' +
+                    '🕐 ' + new Date().toLocaleString('pt-BR')
+                );
             }
 
             // ========================================================
@@ -2008,6 +2063,16 @@
                     formUsuario.reset();
                     userTipo.value = 'padrao';
                     mostrarToast(`Usuário "${username}" criado com sucesso!`, 'success');
+
+                    // Notifica via WhatsApp
+                    enviarWhatsApp(
+                        '👥 *SAC DONA RITA EMBALAGENS*\n' +
+                        '➕ *NOVO USUÁRIO CRIADO*\n' +
+                        '👤 Usuário: ' + username + '\n' +
+                        '🔑 Tipo: ' + (tipo === 'admin' ? '👑 Administrador' : '👤 Padrão') + '\n' +
+                        '👨‍💼 Criado por: ' + (currentUser ? currentUser.username : '-') + '\n' +
+                        '🕐 ' + new Date().toLocaleString('pt-BR')
+                    );
                 } catch (err) {
                     console.error('Erro ao criar usuário:', err);
                     mostrarToast('Erro ao criar usuário. Verifique as regras do Firestore.', 'error');
@@ -2024,6 +2089,16 @@
                     usuarios = usuarios.filter(x => x.docId !== docId);
                     renderizarUsuarios();
                     mostrarToast(`Usuário "${u.username}" excluído.`, 'success');
+
+                    // Notifica via WhatsApp
+                    enviarWhatsApp(
+                        '👥 *SAC DONA RITA EMBALAGENS*\n' +
+                        '🗑️ *USUÁRIO EXCLUÍDO*\n' +
+                        '👤 Usuário: ' + u.username + '\n' +
+                        '🔑 Tipo: ' + (u.tipo === 'admin' ? 'Administrador' : 'Padrão') + '\n' +
+                        '👨‍💼 Excluído por: ' + (currentUser ? currentUser.username : '-') + '\n' +
+                        '🕐 ' + new Date().toLocaleString('pt-BR')
+                    );
                 } catch (err) {
                     console.error('Erro ao excluir usuário:', err);
                     mostrarToast('Erro ao excluir usuário.', 'error');
@@ -2419,6 +2494,46 @@
                 return true;
             }
 
+            // Monta a mensagem de WhatsApp para um registro
+            function montarMensagemRegistro(registro, acao, usuario) {
+                const linhas = [];
+                linhas.push('📦 *SAC DONA RITA EMBALAGENS*');
+                linhas.push(acao);
+                linhas.push('━━━━━━━━━━━━━━━━━━');
+                linhas.push('🔢 *Nº Registro:* ' + (registro.numRegistro || '-'));
+                linhas.push('👤 *Cliente:* ' + (registro.cliente || '-'));
+                linhas.push('📅 *Data Ocorrência:* ' + formatarData(registro.dataOcorrencia));
+                linhas.push('🏭 *Área:* ' + (registro.areaEnvolvida || '-'));
+                linhas.push('🌐 *Origem:* ' + (registro.origem || '-'));
+                linhas.push('📝 *Causa Resumida:* ' + (registro.causaResumida || '-'));
+                linhas.push('📊 *Andamento:* ' + (registro.andamento || '-'));
+                if (registro.codItem) linhas.push('🏷️ *Cód. Item:* ' + registro.codItem);
+                if (registro.descricaoProduto) linhas.push('📦 *Produto:* ' + registro.descricaoProduto);
+                if (registro.valorNFD !== null && registro.valorNFD !== undefined) {
+                    linhas.push('🔢 *Qtd. Reclamada:* ' + registro.valorNFD);
+                }
+                if (registro.atrasosDias !== null && registro.atrasosDias !== undefined) {
+                    linhas.push('⏰ *Atrasos/Dias:* ' + registro.atrasosDias);
+                }
+                if (registro.nfNfd) linhas.push('🧾 *Nf/Nfd:* ' + registro.nfNfd);
+                if (registro.bonificacao !== null && registro.bonificacao !== undefined) {
+                    linhas.push('💰 *Bonificação:* R$ ' + formatarMoedaBR(registro.bonificacao));
+                }
+                if (registro.prorrogacao !== null && registro.prorrogacao !== undefined) {
+                    linhas.push('⏳ *Prorrogação:* ' + registro.prorrogacao + ' dia(s)');
+                }
+                if (registro.reemissao !== null && registro.reemissao !== undefined) {
+                    linhas.push('🔄 *Reemissão:* ' + registro.reemissao + ' dia(s)');
+                }
+                if (registro.solucaoProblema) {
+                    linhas.push('🛠️ *Solução:* ' + registro.solucaoProblema.substring(0, 200));
+                }
+                linhas.push('━━━━━━━━━━━━━━━━━━');
+                linhas.push('👨‍💼 *Por:* ' + (usuario || '-'));
+                linhas.push('🕐 ' + new Date().toLocaleString('pt-BR'));
+                return linhas.join('\n');
+            }
+
             async function salvarRegistro(e) {
                 e.preventDefault();
                 if (!isAdmin()) {
@@ -2430,11 +2545,12 @@
                 const dados = coletarDadosFormulario();
                 if (!validarFormulario(dados)) return;
 
+                const eraEdicao = registroEmEdicao !== null;
                 const agora = new Date().toISOString();
                 setLoadingState(true);
 
                 try {
-                    if (registroEmEdicao !== null) {
+                    if (eraEdicao) {
                         const idx = registros.indexOf(registroEmEdicao);
                         if (idx === -1) {
                             mostrarToast('Registro não encontrado localmente.', 'error');
@@ -2470,6 +2586,15 @@
 
                         mostrarToast(`Registro #${dados.numRegistro} atualizado com sucesso!`, 'success');
                         registroEmEdicao = null;
+
+                        // Notifica via WhatsApp
+                        enviarWhatsApp(
+                            montarMensagemRegistro(
+                                dadosParaSalvar,
+                                (mudouAndamento ? '✏️ *ATUALIZAÇÃO DE REGISTRO* (andamento: ' + original.andamento + ' → ' + dados.andamento + ')' : '✏️ *ATUALIZAÇÃO DE REGISTRO*'),
+                                currentUser ? currentUser.username : '-'
+                            )
+                        );
                     } else {
                         const novoRegistro = {
                             ...dados,
@@ -2488,6 +2613,15 @@
                         });
 
                         mostrarToast(`Registro #${dados.numRegistro} salvo com sucesso!`, 'success');
+
+                        // Notifica via WhatsApp
+                        enviarWhatsApp(
+                            montarMensagemRegistro(
+                                novoRegistro,
+                                '🆕 *NOVO REGISTRO CADASTRADO*',
+                                currentUser ? currentUser.username : '-'
+                            )
+                        );
                     }
 
                     atualizarStats();
@@ -2525,6 +2659,20 @@
                     renderizarTabela();
                     fecharModal();
                     mostrarToast(`Registro #${registro.numRegistro} excluído!`, 'success');
+
+                    // Notifica via WhatsApp
+                    enviarWhatsApp(
+                        '🗑️ *SAC DONA RITA EMBALAGENS*\n' +
+                        '❌ *REGISTRO EXCLUÍDO*\n' +
+                        '━━━━━━━━━━━━━━━━━━\n' +
+                        '🔢 Nº Registro: ' + (registro.numRegistro || '-') + '\n' +
+                        '👤 Cliente: ' + (registro.cliente || '-') + '\n' +
+                        '🏭 Área: ' + (registro.areaEnvolvida || '-') + '\n' +
+                        '📊 Andamento: ' + (registro.andamento || '-') + '\n' +
+                        '━━━━━━━━━━━━━━━━━━\n' +
+                        '👨‍💼 Por: ' + (currentUser ? currentUser.username : '-') + '\n' +
+                        '🕐 ' + new Date().toLocaleString('pt-BR')
+                    );
                 } catch (err) {
                     console.error('Erro ao excluir:', err);
                     mostrarToast('Erro ao excluir do Firebase! Verifique sua conexão.', 'error');
