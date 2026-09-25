@@ -931,6 +931,24 @@
             border-top: 2px solid #B39DDB;
             font-size: 0.72rem;
         }
+
+        .subtitulo-lista {
+            margin-top: 18px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #EDE7F6 0%, #F3E5F5 100%);
+            border-left: 5px solid #7C3AED;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: #3C1053;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .subtitulo-lista .icon { font-size: 1rem; }
+
         @media (max-width: 768px) {
             .charts-grid { grid-template-columns: 1fr; }
         }
@@ -1497,7 +1515,16 @@
                         <h3>Atrasos / Dias / Prorrogação (dias) - Transporte</h3>
                         <canvas id="graficoAtrasosProrrogacao"></canvas>
                         <div id="mediaAtrasosProrrogacao" class="media-info" style="display: none;"></div>
+
+                        <div class="subtitulo-lista">
+                            <span class="icon">📋</span> Por Reclamação (Transporte)
+                        </div>
                         <div id="listaAtrasosProrrogacao" class="lista-atrasos-prorrogacao"></div>
+
+                        <div class="subtitulo-lista">
+                            <span class="icon">👥</span> Por Cliente (Transporte)
+                        </div>
+                        <div id="listaAtrasosPorCliente" class="lista-atrasos-prorrogacao"></div>
                     </div>
                 </div>
             </div>
@@ -1719,6 +1746,7 @@
             const canvasAtrasosProrrogacao = $('graficoAtrasosProrrogacao');
             const canvasNfNfdArea = $('graficoNfNfdArea');
             const listaAtrasosProrrogacao = $('listaAtrasosProrrogacao');
+            const listaAtrasosPorCliente = $('listaAtrasosPorCliente');
             const mediaAtrasosProrrogacao = $('mediaAtrasosProrrogacao');
 
             const tabButtons = document.querySelectorAll('.tab-btn');
@@ -2977,6 +3005,80 @@
                 listaAtrasosProrrogacao.innerHTML = html;
             }
 
+            function popularListaAtrasosPorCliente(dados) {
+                if (!listaAtrasosPorCliente) return;
+
+                const dadosLogistica = dados.filter(r => normalizarArea(r.areaEnvolvida) === 'Transporte');
+
+                const comValores = dadosLogistica.filter(r => {
+                    const a = parseFloat(r.atrasosDias) || 0;
+                    const p = parseFloat(r.prorrogacao) || 0;
+                    return a > 0 || p > 0;
+                });
+
+                if (comValores.length === 0) {
+                    listaAtrasosPorCliente.innerHTML =
+                        '<div class="lista-vazia">Nenhuma reclamação de Transporte com atrasos ou prorrogação nos filtros selecionados.</div>';
+                    return;
+                }
+
+                const clienteMap = new Map();
+                comValores.forEach(r => {
+                    const cliente = r.cliente || 'Não informado';
+                    if (!clienteMap.has(cliente)) {
+                        clienteMap.set(cliente, { cliente: cliente, atrasos: 0, prorrogacao: 0, qtd: 0 });
+                    }
+                    const entry = clienteMap.get(cliente);
+                    entry.atrasos += parseFloat(r.atrasosDias) || 0;
+                    entry.prorrogacao += parseFloat(r.prorrogacao) || 0;
+                    entry.qtd++;
+                });
+
+                const clientes = Array.from(clienteMap.values());
+                clientes.sort((a, b) => {
+                    if (b.atrasos !== a.atrasos) return b.atrasos - a.atrasos;
+                    return b.prorrogacao - a.prorrogacao;
+                });
+
+                let totalAtrasos = 0;
+                let totalProrrog = 0;
+                let totalQtd = 0;
+
+                let html = '<table class="tabela-atrasos-prorrogacao">';
+                html += '<thead><tr>';
+                html += '<th>Cliente</th>';
+                html += '<th style="text-align:center;">Qtd. Reclamações</th>';
+                html += '<th style="text-align:center;">Atrasos (dias)</th>';
+                html += '<th style="text-align:center;">Prorrog. (dias)</th>';
+                html += '<th style="text-align:center;">Total (dias)</th>';
+                html += '</tr></thead><tbody>';
+
+                clientes.forEach(c => {
+                    const total = c.atrasos + c.prorrogacao;
+                    totalAtrasos += c.atrasos;
+                    totalProrrog += c.prorrogacao;
+                    totalQtd += c.qtd;
+
+                    const clienteSafe = (c.cliente || '-').replace(/"/g, '&quot;');
+                    html += '<tr>';
+                    html += `<td title="${clienteSafe}"><strong>${c.cliente}</strong></td>`;
+                    html += `<td style="text-align:center;">${c.qtd}</td>`;
+                    html += `<td style="text-align:center;" class="val-atrasos">${c.atrasos > 0 ? c.atrasos : '-'}</td>`;
+                    html += `<td style="text-align:center;" class="val-prorrog">${c.prorrogacao > 0 ? c.prorrogacao : '-'}</td>`;
+                    html += `<td style="text-align:center;" class="val-total">${total > 0 ? total : '-'}</td>`;
+                    html += '</tr>';
+                });
+
+                html += '</tbody><tfoot><tr>';
+                html += `<td colspan="2" style="text-align:right;">TOTAIS (${clientes.length} cliente(s) · ${totalQtd} reclamação(ões))</td>`;
+                html += `<td style="text-align:center;">${totalAtrasos}</td>`;
+                html += `<td style="text-align:center;">${totalProrrog}</td>`;
+                html += `<td style="text-align:center;">${totalAtrasos + totalProrrog}</td>`;
+                html += '</tr></tfoot></table>';
+
+                listaAtrasosPorCliente.innerHTML = html;
+            }
+
             function renderizarDashboard() {
                 destruirGraficos();
                 const dados = filtrarRegistrosDashboard();
@@ -3348,6 +3450,7 @@
                 }
 
                 popularListaAtrasosProrrogacao(dados);
+                popularListaAtrasosPorCliente(dados);
             }
 
             async function gerarPDFDashboard() {
@@ -3601,7 +3704,7 @@
                         listaHeader.style.fontWeight = '800';
                         listaHeader.style.letterSpacing = '1px';
                         listaHeader.style.textTransform = 'uppercase';
-                        listaHeader.textContent = '📋 Lista por Reclamação: Atrasos / Prorrogação (Transporte)';
+                        listaHeader.textContent = '📋 Por Reclamação: Atrasos / Prorrogação (Transporte)';
                         extraWrapper.appendChild(listaHeader);
 
                         const listaConteudo = document.createElement('div');
@@ -3612,6 +3715,36 @@
 
                         extraWrapper.appendChild(listaConteudo);
                         boxClone.appendChild(extraWrapper);
+                    }
+
+                    const listaClienteOrig = chartBox.querySelector('#listaAtrasosPorCliente');
+                    if (listaClienteOrig && listaClienteOrig.innerHTML.trim() && !listaClienteOrig.querySelector('.lista-vazia')) {
+                        const extraWrapper2 = document.createElement('div');
+                        extraWrapper2.style.marginTop = '14px';
+                        extraWrapper2.style.borderRadius = '8px';
+                        extraWrapper2.style.border = '1px solid #C8B8E0';
+                        extraWrapper2.style.overflow = 'hidden';
+                        extraWrapper2.style.background = '#ffffff';
+
+                        const listaHeader2 = document.createElement('div');
+                        listaHeader2.style.background = 'linear-gradient(135deg, #3C1053 0%, #5B2A86 100%)';
+                        listaHeader2.style.color = '#fff';
+                        listaHeader2.style.padding = '8px 12px';
+                        listaHeader2.style.fontSize = '11px';
+                        listaHeader2.style.fontWeight = '800';
+                        listaHeader2.style.letterSpacing = '1px';
+                        listaHeader2.style.textTransform = 'uppercase';
+                        listaHeader2.textContent = '👥 Por Cliente: Atrasos / Prorrogação (Transporte)';
+                        extraWrapper2.appendChild(listaHeader2);
+
+                        const listaConteudo2 = document.createElement('div');
+                        listaConteudo2.innerHTML = listaClienteOrig.innerHTML;
+                        listaConteudo2.style.padding = '0';
+                        listaConteudo2.style.maxHeight = 'none';
+                        listaConteudo2.style.overflow = 'visible';
+
+                        extraWrapper2.appendChild(listaConteudo2);
+                        boxClone.appendChild(extraWrapper2);
                     }
 
                     wrap.appendChild(boxClone);
@@ -3725,7 +3858,6 @@
                     const dataGeracao = agora.toLocaleDateString('pt-BR') + ' às ' +
                         agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-                    // Calcula totais
                     let totalPendentes = 0, totalConcluidos = 0, totalEmAtraso = 0;
                     let totalQtdReclamada = 0, totalBonificacao = 0, totalNfNfd = 0;
                     filtrados.forEach(r => {
