@@ -805,7 +805,8 @@
         }
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            /* AUMENTADO O TAMANHO MINIMO DAS COLUNAS PARA DEIXAR OS GRAFICOS MAIORES */
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
             gap: 20px;
             margin-top: 20px;
         }
@@ -832,14 +833,15 @@
             border-bottom: 1px solid #E8EAF6;
             padding-bottom: 8px;
         }
-        .chart-container canvas { max-height: 300px; max-width: 100%; }
+        /* AUMENTADO A ALTURA MAXIMA DOS GRAFICOS PARA MELHOR VISUALIZACAO */
+        .chart-container canvas { max-height: 380px; max-width: 100%; }
         
         .chart-container.chart-container-produtos {
             grid-column: 1 / -1;
         }
         .chart-container.chart-container-produtos canvas {
-            max-height: 350px !important;
-            height: 350px !important;
+            max-height: 400px !important;
+            height: 400px !important;
         }
 
         .chart-container-full {
@@ -3151,9 +3153,11 @@
                             animation: false,
                             layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } },
                             plugins: {
-                                legend: { position: 'bottom', labels: { font: { size: 10 } } },
+                                // AUMENTADO O TAMANHO DA FONTE DA LEGENDA
+                                legend: { position: 'bottom', labels: { font: { size: 12 } } },
                                 datalabels: {
-                                    color: '#fff', font: { weight: 'bold', size: 14 },
+                                    // AUMENTADO O TAMANHO DA FONTE DOS NUMEROS
+                                    color: '#fff', font: { weight: 'bold', size: 16 },
                                     formatter: (v) => v, anchor: 'center', align: 'center'
                                 }
                             }
@@ -3257,9 +3261,11 @@
                             responsive: true, maintainAspectRatio: true, animation: false,
                             layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } },
                             plugins: {
-                                legend: { position: 'bottom', labels: { font: { size: 10 } } },
+                                // AUMENTADO O TAMANHO DA FONTE DA LEGENDA
+                                legend: { position: 'bottom', labels: { font: { size: 12 } } },
                                 datalabels: {
-                                    color: '#fff', font: { weight: 'bold', size: 12 },
+                                    // AUMENTADO O TAMANHO DA FONTE DOS NUMEROS
+                                    color: '#fff', font: { weight: 'bold', size: 14 },
                                     formatter: (v) => v, anchor: 'center', align: 'center'
                                 }
                             }
@@ -3293,7 +3299,8 @@
                             datalabels: {
                                 anchor: 'end', align: 'end', offset: 6, clamp: false,
                                 color: '#3C1053',
-                                font: { weight: 'bold', size: 14 },
+                                // AUMENTADO O TAMANHO DA FONTE DOS NUMEROS
+                                font: { weight: 'bold', size: 16 },
                                 backgroundColor: 'rgba(255,255,255,0.9)',
                                 borderRadius: 4,
                                 padding: { top: 3, bottom: 3, left: 6, right: 6 },
