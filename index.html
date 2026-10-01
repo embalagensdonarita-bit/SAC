@@ -1545,7 +1545,7 @@
                         <div id="listaAtrasosProrrogacao" class="lista-atrasos-prorrogacao"></div>
 
                         <div class="subtitulo-lista">
-                            <span class="icon">👥</span> Por Cliente (Comercial)
+                            <span class="icon">📋</span> Detalhes de Reclamações Comercial (Cliente, Região, Nf/Nfd, Causa)
                         </div>
                         <div id="listaAtrasosPorCliente" class="lista-atrasos-prorrogacao"></div>
                     </div>
@@ -3056,71 +3056,38 @@
                 // Filtro mudou de 'Transporte' para 'Comercial'
                 const dadosComercial = dados.filter(r => normalizarArea(r.areaEnvolvida) === 'Comercial');
 
-                const comValores = dadosComercial.filter(r => {
-                    const a = parseFloat(r.atrasosDias) || 0;
-                    const p = parseFloat(r.prorrogacao) || 0;
-                    return a > 0 || p > 0;
-                });
-
-                if (comValores.length === 0) {
+                if (dadosComercial.length === 0) {
                     listaAtrasosPorCliente.innerHTML =
-                        '<div class="lista-vazia">Nenhuma reclamação de Comercial com atrasos ou prorrogação nos filtros selecionados.</div>';
+                        '<div class="lista-vazia">Nenhuma reclamação de Comercial nos filtros selecionados.</div>';
                     return;
                 }
 
-                const clienteMap = new Map();
-                comValores.forEach(r => {
-                    const cliente = r.cliente || 'Não informado';
-                    if (!clienteMap.has(cliente)) {
-                        clienteMap.set(cliente, { cliente: cliente, atrasos: 0, prorrogacao: 0, qtd: 0 });
-                    }
-                    const entry = clienteMap.get(cliente);
-                    entry.atrasos += parseFloat(r.atrasosDias) || 0;
-                    entry.prorrogacao += parseFloat(r.prorrogacao) || 0;
-                    entry.qtd++;
-                });
-
-                const clientes = Array.from(clienteMap.values());
-                clientes.sort((a, b) => {
-                    if (b.atrasos !== a.atrasos) return b.atrasos - a.atrasos;
-                    return b.prorrogacao - a.prorrogacao;
-                });
-
-                let totalAtrasos = 0;
-                let totalProrrog = 0;
-                let totalQtd = 0;
+                // Ordenar por cliente (opcional, mas bom para organização)
+                dadosComercial.sort((a, b) => (a.cliente || '').localeCompare(b.cliente || ''));
 
                 let html = '<table class="tabela-atrasos-prorrogacao">';
                 html += '<thead><tr>';
                 html += '<th>Cliente</th>';
-                html += '<th style="text-align:center;">Qtd. Reclamações</th>';
-                html += '<th style="text-align:center;">Atrasos (dias)</th>';
-                html += '<th style="text-align:center;">Prorrog. (dias)</th>';
-                html += '<th style="text-align:center;">Total (dias)</th>';
+                html += '<th>Região</th>';
+                html += '<th>Nf / Nfd</th>';
+                html += '<th>Reclamado Resumido</th>';
                 html += '</tr></thead><tbody>';
 
-                clientes.forEach(c => {
-                    const total = c.atrasos + c.prorrogacao;
-                    totalAtrasos += c.atrasos;
-                    totalProrrog += c.prorrogacao;
-                    totalQtd += c.qtd;
+                dadosComercial.forEach(r => {
+                    const clienteSafe = (r.cliente || '-').replace(/"/g, '&quot;');
+                    const regiaoSafe = (r.regiao || '-').replace(/"/g, '&quot;');
+                    const nfNfdSafe = (r.nfNfd || '-').replace(/"/g, '&quot;');
+                    const causaSafe = (r.causaResumida || '-').replace(/"/g, '&quot;');
 
-                    const clienteSafe = (c.cliente || '-').replace(/"/g, '&quot;');
                     html += '<tr>';
-                    html += `<td title="${clienteSafe}"><strong>${c.cliente}</strong></td>`;
-                    html += `<td style="text-align:center;">${c.qtd}</td>`;
-                    html += `<td style="text-align:center;" class="val-atrasos">${c.atrasos > 0 ? c.atrasos : '-'}</td>`;
-                    html += `<td style="text-align:center;" class="val-prorrog">${c.prorrogacao > 0 ? c.prorrogacao : '-'}</td>`;
-                    html += `<td style="text-align:center;" class="val-total">${total > 0 ? total : '-'}</td>`;
+                    html += `<td title="${clienteSafe}"><strong>${r.cliente || '-'}</strong></td>`;
+                    html += `<td title="${regiaoSafe}">${r.regiao || '-'}</td>`;
+                    html += `<td title="${nfNfdSafe}">${r.nfNfd || '-'}</td>`;
+                    html += `<td title="${causaSafe}" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.causaResumida || '-'}</td>`;
                     html += '</tr>';
                 });
 
-                html += '</tbody><tfoot><tr>';
-                html += `<td colspan="2" style="text-align:right;">TOTAIS (${clientes.length} cliente(s) · ${totalQtd} reclamação(ões))</td>`;
-                html += `<td style="text-align:center;">${totalAtrasos}</td>`;
-                html += `<td style="text-align:center;">${totalProrrog}</td>`;
-                html += `<td style="text-align:center;">${totalAtrasos + totalProrrog}</td>`;
-                html += '</tr></tfoot></table>';
+                html += '</tbody></table>';
 
                 listaAtrasosPorCliente.innerHTML = html;
             }
@@ -3918,7 +3885,7 @@
                         listaHeader2.style.letterSpacing = '1px';
                         listaHeader2.style.textTransform = 'uppercase';
                         // Header do PDF mudou de Transporte para Comercial
-                        listaHeader2.textContent = '👥 Por Cliente: Atrasos / Prorrogação (Comercial)';
+                        listaHeader2.textContent = '👥 Reclamações Comercial (Cliente, Região, Nf/Nfd, Causa)';
                         extraWrapper2.appendChild(listaHeader2);
 
                         const listaConteudo2 = document.createElement('div');
