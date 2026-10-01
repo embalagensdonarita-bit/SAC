@@ -1517,6 +1517,11 @@
                         <h3>Ocorrências Abertas vs Concluídas</h3>
                         <canvas id="graficoStatus"></canvas>
                     </div>
+                    <!-- NOVO GRÁFICO ADICIONADO AQUI -->
+                    <div class="chart-container">
+                        <h3>Reclamações por Região</h3>
+                        <canvas id="graficoRegiao"></canvas>
+                    </div>
                     <div class="chart-container chart-container-produtos">
                         <h3>Quantidade Reclamada por Produto</h3>
                         <canvas id="graficoProdutos"></canvas>
@@ -1525,7 +1530,6 @@
                         <h3>Nf / Nfd por Área Envolvida (Valores R$)</h3>
                         <canvas id="graficoNfNfdArea"></canvas>
                     </div>
-                    <!-- NOVO GRÁFICO ADICIONADO AQUI -->
                     <div class="chart-container chart-container-full">
                         <h3>Vendas no Mês Tributada x Reclamações do Mês</h3>
                         <canvas id="graficoVendasReclamacoes"></canvas>
@@ -1701,6 +1705,7 @@
             let chartAtrasosProrrogacao = null;
             let chartNfNfdArea = null;
             let chartVendasReclamacoes = null; // Novo gráfico
+            let chartRegiao = null;            // Novo gráfico de Região
             let vendasMesTributada = null;     // Variável para armazenar o valor das vendas
 
             const $ = (id) => document.getElementById(id);
@@ -1769,6 +1774,7 @@
             const canvasAtrasosProrrogacao = $('graficoAtrasosProrrogacao');
             const canvasNfNfdArea = $('graficoNfNfdArea');
             const canvasVendasReclamacoes = $('graficoVendasReclamacoes'); // Novo Canvas
+            const canvasRegiao = $('graficoRegiao');                         // Novo Canvas de Região
             const listaAtrasosProrrogacao = $('listaAtrasosProrrogacao');
             const listaAtrasosPorCliente = $('listaAtrasosPorCliente');
             const mediaAtrasosProrrogacao = $('mediaAtrasosProrrogacao');
@@ -2967,6 +2973,7 @@
                 if (chartAtrasosProrrogacao) { chartAtrasosProrrogacao.destroy(); chartAtrasosProrrogacao = null; }
                 if (chartNfNfdArea) { chartNfNfdArea.destroy(); chartNfNfdArea = null; }
                 if (chartVendasReclamacoes) { chartVendasReclamacoes.destroy(); chartVendasReclamacoes = null; }
+                if (chartRegiao) { chartRegiao.destroy(); chartRegiao = null; }
             }
 
             function abreviarValor(v) {
@@ -3310,6 +3317,77 @@
                         scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grace: '22%' } }
                     }
                 });
+
+                // ==========================================================
+                // NOVO GRÁFICO: Reclamações por Região
+                // ==========================================================
+                const regiaoMap = new Map();
+                dados.forEach(r => {
+                    const regiao = r.regiao || 'Não informada';
+                    regiaoMap.set(regiao, (regiaoMap.get(regiao) || 0) + 1);
+                });
+                const regiaoLabels = Array.from(regiaoMap.keys());
+                const regiaoValores = Array.from(regiaoMap.values());
+                if (regiaoLabels.length > 0) {
+                    chartRegiao = new Chart(canvasRegiao.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: regiaoLabels,
+                            datasets: [{
+                                label: 'Qtd. Reclamações',
+                                data: regiaoValores,
+                                backgroundColor: '#7C3AED',
+                                borderColor: '#5B2A86',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: false,
+                            layout: { padding: { top: 40, right: 14, left: 10, bottom: 60 } },
+                            plugins: {
+                                legend: { display: false },
+                                datalabels: {
+                                    anchor: 'end',
+                                    align: 'end',
+                                    offset: 6,
+                                    clamp: false,
+                                    color: '#3C1053',
+                                    font: { weight: 'bold', size: 12 },
+                                    backgroundColor: 'rgba(255,255,255,0.9)',
+                                    borderRadius: 4,
+                                    padding: { top: 3, bottom: 3, left: 5, right: 5 },
+                                    formatter: (v) => v
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: {
+                                        autoSkip: false,
+                                        maxRotation: 45,
+                                        minRotation: 45,
+                                        font: { size: 11, weight: '600' },
+                                        color: '#3C1053'
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { precision: 0 },
+                                    grace: '22%'
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    const ctx = canvasRegiao.getContext('2d');
+                    ctx.clearRect(0, 0, canvasRegiao.width, canvasRegiao.height);
+                    ctx.fillStyle = '#5C5C8A';
+                    ctx.font = 'bold 13px Segoe UI, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Sem dados de região nos filtros selecionados', canvasRegiao.width / 2, canvasRegiao.height / 2);
+                }
 
                 const nfNfdPorArea = new Map();
                 let totalNfNfd = 0;
