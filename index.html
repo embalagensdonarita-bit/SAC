@@ -1523,6 +1523,11 @@
                         <h3>Nf / Nfd por Área Envolvida (Valores R$)</h3>
                         <canvas id="graficoNfNfdArea"></canvas>
                     </div>
+                    <!-- NOVO GRÁFICO ADICIONADO AQUI -->
+                    <div class="chart-container chart-container-full">
+                        <h3>Vendas no Mês Tributada x Reclamações do Mês</h3>
+                        <canvas id="graficoVendasReclamacoes"></canvas>
+                    </div>
                     <div class="chart-container chart-container-full">
                         <h3>Atrasos / Dias / Prorrogação (dias) - Transporte</h3>
                         <canvas id="graficoAtrasosProrrogacao"></canvas>
@@ -1693,6 +1698,8 @@
             let chartStatus = null;
             let chartAtrasosProrrogacao = null;
             let chartNfNfdArea = null;
+            let chartVendasReclamacoes = null; // Novo gráfico
+            let vendasMesTributada = null;     // Variável para armazenar o valor das vendas
 
             const $ = (id) => document.getElementById(id);
 
@@ -1759,6 +1766,7 @@
             const canvasStatus = $('graficoStatus');
             const canvasAtrasosProrrogacao = $('graficoAtrasosProrrogacao');
             const canvasNfNfdArea = $('graficoNfNfdArea');
+            const canvasVendasReclamacoes = $('graficoVendasReclamacoes'); // Novo Canvas
             const listaAtrasosProrrogacao = $('listaAtrasosProrrogacao');
             const listaAtrasosPorCliente = $('listaAtrasosPorCliente');
             const mediaAtrasosProrrogacao = $('mediaAtrasosProrrogacao');
@@ -2956,6 +2964,7 @@
                 if (chartStatus) { chartStatus.destroy(); chartStatus = null; }
                 if (chartAtrasosProrrogacao) { chartAtrasosProrrogacao.destroy(); chartAtrasosProrrogacao = null; }
                 if (chartNfNfdArea) { chartNfNfdArea.destroy(); chartNfNfdArea = null; }
+                if (chartVendasReclamacoes) { chartVendasReclamacoes.destroy(); chartVendasReclamacoes = null; }
             }
 
             function abreviarValor(v) {
@@ -3035,7 +3044,7 @@
             function popularListaAtrasosPorCliente(dados) {
                 if (!listaAtrasosPorCliente) return;
 
-                // ALTERADO: Filtro mudou de 'Transporte' para 'Comercial'
+                // Filtro mudou de 'Transporte' para 'Comercial'
                 const dadosComercial = dados.filter(r => normalizarArea(r.areaEnvolvida) === 'Comercial');
 
                 const comValores = dadosComercial.filter(r => {
@@ -3379,6 +3388,51 @@
                     ctx.fillText('Sem valores de Nf / Nfd nos filtros selecionados', canvasNfNfdArea.width / 2, canvasNfNfdArea.height / 2);
                 }
 
+                // ==========================================================
+                // NOVO GRÁFICO: Vendas no Mês Tributada x Reclamações do Mês
+                // ==========================================================
+                if (vendasMesTributada !== null && vendasMesTributada !== undefined) {
+                    const totalReclamacoes = dados.length;
+                    chartVendasReclamacoes = new Chart(canvasVendasReclamacoes.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: ['Vendas Tributadas', 'Reclamações'],
+                            datasets: [{
+                                label: 'Quantidade',
+                                data: [vendasMesTributada, totalReclamacoes],
+                                backgroundColor: ['#3C1053', '#F57C00'],
+                                borderColor: ['#1A0033', '#E65100'],
+                                borderWidth: 1,
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: true, animation: false,
+                            layout: { padding: { top: 40, right: 10, left: 5, bottom: 5 } },
+                            plugins: {
+                                legend: { display: false },
+                                datalabels: {
+                                    anchor: 'end', align: 'end', offset: 6, clamp: false,
+                                    color: '#3C1053',
+                                    font: { weight: 'bold', size: 14 },
+                                    backgroundColor: 'rgba(255,255,255,0.9)',
+                                    borderRadius: 4,
+                                    padding: { top: 3, bottom: 3, left: 6, right: 6 },
+                                    formatter: (v) => v.toLocaleString('pt-BR')
+                                }
+                            },
+                            scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grace: '22%' } }
+                        }
+                    });
+                } else {
+                    const ctx = canvasVendasReclamacoes.getContext('2d');
+                    ctx.clearRect(0, 0, canvasVendasReclamacoes.width, canvasVendasReclamacoes.height);
+                    ctx.fillStyle = '#5C5C8A';
+                    ctx.font = 'bold 13px Segoe UI, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Aguardando dados de vendas para gerar o comparativo', canvasVendasReclamacoes.width / 2, canvasVendasReclamacoes.height / 2);
+                }
+
                 const atrasosPorArea = new Map();
                 dados.forEach(r => {
                     if (normalizarArea(r.areaEnvolvida) !== 'Transporte') return;
@@ -3486,6 +3540,22 @@
                     mostrarToast('Apenas administradores podem gerar PDF.', 'error');
                     return;
                 }
+
+                // Solicita o valor de vendas
+                const inputVendas = prompt("Digite a quantidade de vendas no mês tributada:");
+                if (inputVendas === null) return; // Usuário cancelou
+                
+                const vendasFormatadas = parseValorBR(inputVendas);
+                if (vendasFormatadas === null || isNaN(vendasFormatadas)) {
+                    mostrarToast('Por favor, insira um número válido para as vendas.', 'error');
+                    return;
+                }
+                vendasMesTributada = vendasFormatadas;
+
+                // Atualiza o dashboard para renderizar o novo gráfico antes de gerar o PDF
+                renderizarDashboard();
+                await new Promise(resolve => setTimeout(resolve, 800)); // Aguarda o Chart.js renderizar
+
                 const originalText = btnGerarPDF.innerHTML;
                 btnGerarPDF.disabled = true;
                 btnGerarPDF.innerHTML = '<span class="loading-indicator"></span> Gerando...';
@@ -3762,7 +3832,7 @@
                         listaHeader2.style.fontWeight = '800';
                         listaHeader2.style.letterSpacing = '1px';
                         listaHeader2.style.textTransform = 'uppercase';
-                        // ALTERADO: Header do PDF mudou de Transporte para Comercial
+                        // Header do PDF mudou de Transporte para Comercial
                         listaHeader2.textContent = '👥 Por Cliente: Atrasos / Prorrogação (Comercial)';
                         extraWrapper2.appendChild(listaHeader2);
 
