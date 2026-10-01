@@ -516,7 +516,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 0.82rem;
-            min-width: 1350px;
+            min-width: 1550px;
         }
         .table thead {
             background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%);
@@ -1276,6 +1276,11 @@
                         </div>
 
                         <div class="form-group">
+                            <label class="form-label">Região</label>
+                            <input type="text" class="form-input" id="regiao" placeholder="Ex: Sudeste, Nordeste...">
+                        </div>
+
+                        <div class="form-group">
                             <label class="form-label">Data da Ocorrência <span class="required">*</span></label>
                             <input type="date" class="form-input" id="dataOcorrencia" required>
                         </div>
@@ -1359,6 +1364,11 @@
                         </div>
 
                         <div class="form-group">
+                            <label class="form-label">Nota Fiscal (NF)</label>
+                            <input type="text" class="form-input" id="notaFiscal" placeholder="Número da Nota Fiscal">
+                        </div>
+
+                        <div class="form-group">
                             <label class="form-label">Bonificação (R$)</label>
                             <input type="text" inputmode="decimal" class="form-input" id="bonificacao" placeholder="0,00">
                         </div>
@@ -1422,9 +1432,11 @@
                                 <th>Nº Registro</th>
                                 <th>Data</th>
                                 <th>Cliente</th>
+                                <th>Região</th>
                                 <th>Área</th>
                                 <th>Origem</th>
                                 <th>Nf / Nfd</th>
+                                <th>Nota Fiscal</th>
                                 <th>Causa Resumida</th>
                                 <th>Andamento</th>
                                 <th>Tempo Total</th>
@@ -1687,6 +1699,7 @@
             const form = $('formNaoConformidade');
             const numRegistroInput = $('numRegistro');
             const clienteInput = $('cliente');
+            const regiaoInput = $('regiao');
             const dataOcorrenciaInput = $('dataOcorrencia');
             const areaEnvolvidaInput = $('areaEnvolvida');
             const origemRadios = document.querySelectorAll('input[name="origem"]');
@@ -1702,6 +1715,7 @@
             const prorrogacaoInput = $('prorrogacao');
             const reemissaoInput = $('reemissao');
             const nfNfdInput = $('nfNfd');
+            const notaFiscalInput = $('notaFiscal');
 
             const btnSalvar = $('btnSalvar');
             const btnLimpar = $('btnLimpar');
@@ -2354,6 +2368,8 @@
                     if (data.reemissao === undefined) data.reemissao = null;
                     if (data.nfNfd === undefined) data.nfNfd = '';
                     if (data.atrasosDias === undefined) data.atrasosDias = null;
+                    if (data.regiao === undefined) data.regiao = '';
+                    if (data.notaFiscal === undefined) data.notaFiscal = '';
                     registros.push(data);
                 });
 
@@ -2451,8 +2467,10 @@
                 prorrogacaoInput.value = '';
                 reemissaoInput.value = '';
                 nfNfdInput.value = '';
+                notaFiscalInput.value = '';
                 codItemInput.value = '';
                 descricaoProdutoInput.value = '';
+                regiaoInput.value = '';
                 registroEmEdicao = null;
                 btnSalvar.innerHTML = '💾 Salvar Registro';
                 btnSalvar.className = 'btn btn-success';
@@ -2490,6 +2508,7 @@
                 return {
                     numRegistro: numRegistroInput.value.trim(),
                     cliente: clienteInput.value.trim(),
+                    regiao: regiaoInput.value.trim(),
                     dataOcorrencia: dataOcorrenciaInput.value,
                     areaEnvolvida: areaEnvolvidaInput.value,
                     origem: getOrigemSelecionada(),
@@ -2504,7 +2523,8 @@
                     bonificacao: parseValorBR(bonificacaoInput.value),
                     prorrogacao: prorrog,
                     reemissao: reemissao,
-                    nfNfd: nfNfdInput.value.trim()
+                    nfNfd: nfNfdInput.value.trim(),
+                    notaFiscal: notaFiscalInput.value.trim()
                 };
             }
 
@@ -2616,6 +2636,7 @@
                             (dados.descricaoProduto ? `📦 Produto: ${dados.descricaoProduto}\n` : '') +
                             (dados.valorNFD ? `🔢 Qtd: ${dados.valorNFD}\n` : '') +
                             (dados.nfNfd ? `💰 NF/NFD: ${dados.nfNfd}\n` : '') +
+                            (dados.notaFiscal ? `🧾 Nota Fiscal: ${dados.notaFiscal}\n` : '') +
                             `👤 Por: ${currentUser.username}\n` +
                             `🕒 ${dataHora}`
                         );
@@ -2695,6 +2716,7 @@
 
                 numRegistroInput.value = registro.numRegistro || '';
                 clienteInput.value = registro.cliente || '';
+                regiaoInput.value = registro.regiao || '';
                 dataOcorrenciaInput.value = registro.dataOcorrencia || '';
                 areaEnvolvidaInput.value = normalizarArea(registro.areaEnvolvida) || '';
                 setOrigemSelecionada(registro.origem || 'Interno');
@@ -2714,6 +2736,7 @@
                 reemissaoInput.value = (registro.reemissao !== null && registro.reemissao !== undefined)
                     ? formatarQuantidadeInput(registro.reemissao) : '';
                 nfNfdInput.value = registro.nfNfd || '';
+                notaFiscalInput.value = registro.notaFiscal || '';
 
                 btnSalvar.innerHTML = '✏️ Atualizar Registro';
                 btnSalvar.className = 'btn btn-warning';
@@ -2774,6 +2797,7 @@
                     ${alertaHTML}
                     <div class="modal-detail-item"><div class="label">Nº Registro</div><div class="value">#${registro.numRegistro}</div></div>
                     <div class="modal-detail-item"><div class="label">Cliente</div><div class="value">${registro.cliente || '-'}</div></div>
+                    <div class="modal-detail-item"><div class="label">Região</div><div class="value">${registro.regiao || '-'}</div></div>
                     <div class="modal-detail-item"><div class="label">Data da Ocorrência</div><div class="value">${formatarData(registro.dataOcorrencia)}</div></div>
                     <div class="modal-detail-item"><div class="label">Área Envolvida</div><div class="value">${normalizarArea(registro.areaEnvolvida) || '-'}</div></div>
                     <div class="modal-detail-item"><div class="label">Origem</div><div class="value">${registro.origem === 'Interno' ? '🏭 Interno' : '🌐 Externo'}</div></div>
@@ -2784,6 +2808,7 @@
                     <div class="modal-detail-item"><div class="label">Quantidade Reclamada</div><div class="value">${registro.valorNFD !== null && registro.valorNFD !== undefined ? registro.valorNFD : '-'}</div></div>
                     <div class="modal-detail-item"><div class="label">Atrasos / Dias</div><div class="value">${atrasosTexto}</div></div>
                     <div class="modal-detail-item"><div class="label">Nf / Nfd</div><div class="value">${registro.nfNfd || '-'}</div></div>
+                    <div class="modal-detail-item"><div class="label">Nota Fiscal</div><div class="value">${registro.notaFiscal || '-'}</div></div>
                     <div class="modal-detail-item"><div class="label">Bonificação</div><div class="value">${formatarValor(registro.bonificacao)}</div></div>
                     <div class="modal-detail-item"><div class="label">Prorrogação</div><div class="value">${prorrogTexto}</div></div>
                     <div class="modal-detail-item"><div class="label">Reemissão</div><div class="value">${reemissaoTexto}</div></div>
@@ -2814,9 +2839,9 @@
                     if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
                     if (busca) {
                         const campos = [
-                            r.numRegistro, r.cliente, r.causaResumida, r.causaCompleta,
+                            r.numRegistro, r.cliente, r.regiao, r.causaResumida, r.causaCompleta,
                             r.codItem, r.descricaoProduto, normalizarArea(r.areaEnvolvida), r.andamento,
-                            r.nfNfd
+                            r.nfNfd, r.notaFiscal
                         ].join(' ').toLowerCase();
                         if (!campos.includes(busca)) return false;
                     }
@@ -2877,9 +2902,11 @@
                         </td>
                         <td>${formatarData(r.dataOcorrencia)}</td>
                         <td>${r.cliente || '-'}</td>
+                        <td>${r.regiao || '-'}</td>
                         <td>${normalizarArea(r.areaEnvolvida) || '-'}</td>
                         <td>${r.origem === 'Interno' ? '🏭 Interno' : '🌐 Externo'}</td>
                         <td>${r.nfNfd || '-'}</td>
+                        <td>${r.notaFiscal || '-'}</td>
                         <td style="max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${r.causaResumida || ''}">${r.causaResumida || '-'}</td>
                         <td><span class="badge ${badgeClass}">${statusIcon} ${r.andamento}</span></td>
                         <td>${formatarDuracao(tempoTotal)}</td>
@@ -3828,9 +3855,9 @@
                         if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
                         if (busca) {
                             const campos = [
-                                r.numRegistro, r.cliente, r.causaResumida, r.causaCompleta,
+                                r.numRegistro, r.cliente, r.regiao, r.causaResumida, r.causaCompleta,
                                 r.codItem, r.descricaoProduto, normalizarArea(r.areaEnvolvida), r.andamento,
-                                r.nfNfd
+                                r.nfNfd, r.notaFiscal
                             ].join(' ').toLowerCase();
                             if (!campos.includes(busca)) return false;
                         }
@@ -3899,10 +3926,12 @@
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-weight: 700; font-size: 11px;">#${r.numRegistro || '-'}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${formatarData(r.dataOcorrencia)}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${r.cliente || '-'}</td>
+                                <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${r.regiao || '-'}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${normalizarArea(r.areaEnvolvida) || '-'}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${r.origem === 'Interno' ? 'Interno' : 'Externo'}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${r.nfNfd || '-'}</td>
-                                <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px; max-width: 240px;">${r.causaResumida || '-'}</td>
+                                <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${r.notaFiscal || '-'}</td>
+                                <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px; max-width: 180px;">${r.causaResumida || '-'}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${statusIcon} ${r.andamento || '-'}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${formatarDuracao(tempoTotal)}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px; text-align: center;">${atrasosTexto}</td>
@@ -3970,14 +3999,16 @@
                         <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
                             <thead>
                                 <tr style="background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%); color: #fff;">
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 70px;">Nº</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 80px;">Data</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 140px;">Cliente</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 90px;">Área</th>
+                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 60px;">Nº</th>
+                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 70px;">Data</th>
+                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 100px;">Cliente</th>
+                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 70px;">Região</th>
+                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 70px;">Área</th>
                                     <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 70px;">Origem</th>
                                     <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 80px;">Nf/Nfd</th>
+                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 70px;">Nota Fiscal</th>
                                     <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;">Causa Resumida</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 130px;">Andamento</th>
+                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 100px;">Andamento</th>
                                     <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 80px;">Tempo Total</th>
                                     <th style="padding: 9px 8px; text-align: center; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 65px;">Atrasos</th>
                                     <th style="padding: 9px 8px; text-align: right; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 90px;">Bonificação</th>
