@@ -1002,8 +1002,14 @@
         .login-overlay {
             position: fixed;
             inset: 0;
-            background: var(--bg);
-            background-image: var(--bg-gradient);
+            background-color: var(--bg);
+            background-image:
+                linear-gradient(135deg, rgba(26, 0, 51, 0.82) 0%, rgba(45, 10, 78, 0.80) 30%, rgba(60, 16, 83, 0.80) 70%, rgba(26, 0, 51, 0.82) 100%),
+                url('logo.png');
+            background-size: cover, contain;
+            background-position: center center, center center;
+            background-repeat: no-repeat, no-repeat;
+            background-attachment: fixed, fixed;
             display: flex;
             align-items: center;
             justify-content: center;
