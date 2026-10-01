@@ -516,7 +516,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 0.82rem;
-            min-width: 1550px;
+            min-width: 1700px;
         }
         .table thead {
             background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%);
@@ -1278,6 +1278,11 @@
                         </div>
 
                         <div class="form-group">
+                            <label class="form-label">Representante / Reclamante <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="representanteCliente" placeholder="Nome de quem reclamou" required>
+                        </div>
+
+                        <div class="form-group">
                             <label class="form-label">Região</label>
                             <input type="text" class="form-input" id="regiao" placeholder="Ex: Sudeste, Nordeste...">
                         </div>
@@ -1434,6 +1439,7 @@
                                 <th>Nº Registro</th>
                                 <th>Data</th>
                                 <th>Cliente</th>
+                                <th>Representante</th>
                                 <th>Região</th>
                                 <th>Área</th>
                                 <th>Origem</th>
@@ -1713,6 +1719,7 @@
             const form = $('formNaoConformidade');
             const numRegistroInput = $('numRegistro');
             const clienteInput = $('cliente');
+            const representanteClienteInput = $('representanteCliente');
             const regiaoInput = $('regiao');
             const dataOcorrenciaInput = $('dataOcorrencia');
             const areaEnvolvidaInput = $('areaEnvolvida');
@@ -2386,6 +2393,7 @@
                     if (data.atrasosDias === undefined) data.atrasosDias = null;
                     if (data.regiao === undefined) data.regiao = '';
                     if (data.notaFiscal === undefined) data.notaFiscal = '';
+                    if (data.representanteCliente === undefined) data.representanteCliente = '';
                     registros.push(data);
                 });
 
@@ -2474,6 +2482,7 @@
             function limparFormulario() {
                 form.reset();
                 numRegistroInput.value = '';
+                representanteClienteInput.value = '';
                 dataOcorrenciaInput.value = new Date().toISOString().split('T')[0];
                 setOrigemSelecionada('Interno');
                 popularSelectAndamento(false);
@@ -2524,6 +2533,7 @@
                 return {
                     numRegistro: numRegistroInput.value.trim(),
                     cliente: clienteInput.value.trim(),
+                    representanteCliente: representanteClienteInput.value.trim(),
                     regiao: regiaoInput.value.trim(),
                     dataOcorrencia: dataOcorrenciaInput.value,
                     areaEnvolvida: areaEnvolvidaInput.value,
@@ -2548,6 +2558,7 @@
                 const checks = [
                     [dados.numRegistro, 'O campo "Nº Registro" é obrigatório!', numRegistroInput],
                     [dados.cliente, 'O campo "Cliente" é obrigatório!', clienteInput],
+                    [dados.representanteCliente, 'O campo "Representante / Reclamante" é obrigatório!', representanteClienteInput],
                     [dados.dataOcorrencia, 'O campo "Data da Ocorrência" é obrigatório!', dataOcorrenciaInput],
                     [dados.areaEnvolvida, 'O campo "Área Envolvida" é obrigatório!', areaEnvolvidaInput],
                     [dados.causaResumida, 'O campo "Causa Resumida" é obrigatório!', causaResumidaInput],
@@ -2608,6 +2619,7 @@
                         let msgWhats = `✏️ *REGISTRO ATUALIZADO*\n\n` +
                             `📋 Nº: #${dados.numRegistro}\n` +
                             `👤 Cliente: ${dados.cliente}\n` +
+                            `👤 Representante: ${dados.representanteCliente}\n` +
                             `🏭 Área: ${dados.areaEnvolvida}\n` +
                             `🔍 Origem: ${dados.origem}\n` +
                             `📌 Causa: ${dados.causaResumida}\n` +
@@ -2644,6 +2656,7 @@
                             `🚨 *NOVA NÃO CONFORMIDADE*\n\n` +
                             `📋 Nº: #${dados.numRegistro}\n` +
                             `👤 Cliente: ${dados.cliente}\n` +
+                            `👤 Representante: ${dados.representanteCliente}\n` +
                             `📅 Data: ${formatarData(dados.dataOcorrencia)}\n` +
                             `🏭 Área: ${dados.areaEnvolvida}\n` +
                             `🔍 Origem: ${dados.origem}\n` +
@@ -2732,6 +2745,7 @@
 
                 numRegistroInput.value = registro.numRegistro || '';
                 clienteInput.value = registro.cliente || '';
+                representanteClienteInput.value = registro.representanteCliente || '';
                 regiaoInput.value = registro.regiao || '';
                 dataOcorrenciaInput.value = registro.dataOcorrencia || '';
                 areaEnvolvidaInput.value = normalizarArea(registro.areaEnvolvida) || '';
@@ -2813,6 +2827,7 @@
                     ${alertaHTML}
                     <div class="modal-detail-item"><div class="label">Nº Registro</div><div class="value">#${registro.numRegistro}</div></div>
                     <div class="modal-detail-item"><div class="label">Cliente</div><div class="value">${registro.cliente || '-'}</div></div>
+                    <div class="modal-detail-item"><div class="label">Representante / Reclamante</div><div class="value">${registro.representanteCliente || '-'}</div></div>
                     <div class="modal-detail-item"><div class="label">Região</div><div class="value">${registro.regiao || '-'}</div></div>
                     <div class="modal-detail-item"><div class="label">Data da Ocorrência</div><div class="value">${formatarData(registro.dataOcorrencia)}</div></div>
                     <div class="modal-detail-item"><div class="label">Área Envolvida</div><div class="value">${normalizarArea(registro.areaEnvolvida) || '-'}</div></div>
@@ -2855,7 +2870,7 @@
                     if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
                     if (busca) {
                         const campos = [
-                            r.numRegistro, r.cliente, r.regiao, r.causaResumida, r.causaCompleta,
+                            r.numRegistro, r.cliente, r.representanteCliente, r.regiao, r.causaResumida, r.causaCompleta,
                             r.codItem, r.descricaoProduto, normalizarArea(r.areaEnvolvida), r.andamento,
                             r.nfNfd, r.notaFiscal
                         ].join(' ').toLowerCase();
@@ -2918,6 +2933,7 @@
                         </td>
                         <td>${formatarData(r.dataOcorrencia)}</td>
                         <td>${r.cliente || '-'}</td>
+                        <td>${r.representanteCliente || '-'}</td>
                         <td>${r.regiao || '-'}</td>
                         <td>${normalizarArea(r.areaEnvolvida) || '-'}</td>
                         <td>${r.origem === 'Interno' ? '🏭 Interno' : '🌐 Externo'}</td>
@@ -3445,15 +3461,26 @@
                 // ==========================================================
                 if (vendasMesTributada !== null && vendasMesTributada !== undefined) {
                     const totalReclamacoes = dados.length;
+
+                    // Calcular a média mensal de reclamações
+                    const mesesSet = new Set();
+                    dados.forEach(r => {
+                        if (r.dataOcorrencia) {
+                            mesesSet.add(r.dataOcorrencia.substring(0, 7)); // YYYY-MM
+                        }
+                    });
+                    const numMeses = mesesSet.size || 1;
+                    const mediaReclamacoes = totalReclamacoes / numMeses;
+
                     chartVendasReclamacoes = new Chart(canvasVendasReclamacoes.getContext('2d'), {
                         type: 'bar',
                         data: {
-                            labels: ['Vendas Tributadas', 'Reclamações'],
+                            labels: ['Vendas Tributadas', 'Reclamações', 'Média Mensal Reclamações'],
                             datasets: [{
                                 label: 'Quantidade',
-                                data: [vendasMesTributada, totalReclamacoes],
-                                backgroundColor: ['#3C1053', '#F57C00'],
-                                borderColor: ['#1A0033', '#E65100'],
+                                data: [vendasMesTributada, totalReclamacoes, mediaReclamacoes],
+                                backgroundColor: ['#3C1053', '#F57C00', '#A78BFA'],
+                                borderColor: ['#1A0033', '#E65100', '#5B2A86'],
                                 borderWidth: 1,
                                 borderRadius: 6
                             }]
@@ -3695,7 +3722,14 @@
 
                 const tituloOrigem = isTotal ? 'TOTAL (INTERNO + EXTERNO)' : origemFiltro.toUpperCase();
 
+                // Correção do corte do PDF: Adicionando estilo e padding para as tabelas
                 container.innerHTML = `
+                    <style>
+                        .tabela-pdf { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; margin-bottom: 10px; }
+                        .tabela-pdf th, .tabela-pdf td { padding: 4px 6px; border-bottom: 1px solid #E8EAF6; word-wrap: break-word; }
+                        .tabela-pdf thead { background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%); color: #fff; }
+                        .tabela-pdf th { text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+                    </style>
                     <div style="border-bottom: 4px solid #7C3AED; padding-bottom: 20px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
                         <div style="display: flex; align-items: center; gap: 16px;">
                             <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #3C1053 0%, #7C3AED 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 34px; color: #fff;">📦</div>
@@ -3859,6 +3893,10 @@
 
                         const listaConteudo = document.createElement('div');
                         listaConteudo.innerHTML = listaOrig.innerHTML;
+                        // Correção do corte: Adicionar classe tabela-pdf
+                        const table = listaConteudo.querySelector('table');
+                        if (table) table.classList.add('tabela-pdf');
+                        
                         listaConteudo.style.padding = '0';
                         listaConteudo.style.maxHeight = 'none';
                         listaConteudo.style.overflow = 'visible';
@@ -3890,6 +3928,10 @@
 
                         const listaConteudo2 = document.createElement('div');
                         listaConteudo2.innerHTML = listaClienteOrig.innerHTML;
+                        // Correção do corte: Adicionar classe tabela-pdf
+                        const table2 = listaConteudo2.querySelector('table');
+                        if (table2) table2.classList.add('tabela-pdf');
+                        
                         listaConteudo2.style.padding = '0';
                         listaConteudo2.style.maxHeight = 'none';
                         listaConteudo2.style.overflow = 'visible';
@@ -3917,7 +3959,8 @@
 
                 const pageWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
-                const margin = 8;
+                // Correção do corte: Aumentar a margem para 12mm
+                const margin = 12;
                 const imgWidth = pageWidth - margin * 2;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 const pageContentHeight = pageHeight - margin * 2;
@@ -3979,7 +4022,7 @@
                         if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
                         if (busca) {
                             const campos = [
-                                r.numRegistro, r.cliente, r.regiao, r.causaResumida, r.causaCompleta,
+                                r.numRegistro, r.cliente, r.representanteCliente, r.regiao, r.causaResumida, r.causaCompleta,
                                 r.codItem, r.descricaoProduto, normalizarArea(r.areaEnvolvida), r.andamento,
                                 r.nfNfd, r.notaFiscal
                             ].join(' ').toLowerCase();
@@ -4050,6 +4093,7 @@
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-weight: 700; font-size: 11px;">#${r.numRegistro || '-'}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${formatarData(r.dataOcorrencia)}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${r.cliente || '-'}</td>
+                                <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${r.representanteCliente || '-'}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${r.regiao || '-'}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${normalizarArea(r.areaEnvolvida) || '-'}</td>
                                 <td style="padding: 7px 8px; border-bottom: 1px solid #E8EAF6; font-size: 11px;">${r.origem === 'Interno' ? 'Interno' : 'Externo'}</td>
@@ -4065,6 +4109,12 @@
                     });
 
                     container.innerHTML = `
+                        <style>
+                            .tabela-pdf { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; margin-bottom: 10px; }
+                            .tabela-pdf th, .tabela-pdf td { padding: 4px 6px; border-bottom: 1px solid #E8EAF6; word-wrap: break-word; }
+                            .tabela-pdf thead { background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%); color: #fff; }
+                            .tabela-pdf th { text-align: left; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+                        </style>
                         <div style="border-bottom: 4px solid #7C3AED; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
                             <div style="display: flex; align-items: center; gap: 14px;">
                                 <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #3C1053 0%, #7C3AED 100%); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 30px; color: #fff;">📋</div>
@@ -4120,22 +4170,23 @@
                         </div>
                         ` : ''}
 
-                        <table style="width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed;">
+                        <table class="tabela-pdf">
                             <thead>
-                                <tr style="background: linear-gradient(135deg, #3C1053 0%, #5B2A86 100%); color: #fff;">
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 60px;">Nº</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 70px;">Data</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 100px;">Cliente</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 70px;">Região</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 70px;">Área</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 70px;">Origem</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 80px;">Nf/Nfd</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 70px;">Nota Fiscal</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;">Causa Resumida</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 100px;">Andamento</th>
-                                    <th style="padding: 9px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 80px;">Tempo Total</th>
-                                    <th style="padding: 9px 8px; text-align: center; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 65px;">Atrasos</th>
-                                    <th style="padding: 9px 8px; text-align: right; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; width: 90px;">Bonificação</th>
+                                <tr>
+                                    <th style="width: 60px;">Nº</th>
+                                    <th style="width: 70px;">Data</th>
+                                    <th style="width: 100px;">Cliente</th>
+                                    <th style="width: 100px;">Representante</th>
+                                    <th style="width: 70px;">Região</th>
+                                    <th style="width: 70px;">Área</th>
+                                    <th style="width: 70px;">Origem</th>
+                                    <th style="width: 80px;">Nf/Nfd</th>
+                                    <th style="width: 70px;">Nota Fiscal</th>
+                                    <th>Causa Resumida</th>
+                                    <th style="width: 100px;">Andamento</th>
+                                    <th style="width: 80px;">Tempo Total</th>
+                                    <th style="width: 65px; text-align: center;">Atrasos</th>
+                                    <th style="width: 90px; text-align: right;">Bonificação</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -4166,7 +4217,7 @@
 
                     const pageWidth = pdf.internal.pageSize.getWidth();
                     const pageHeight = pdf.internal.pageSize.getHeight();
-                    const margin = 6;
+                    const margin = 12;
                     const imgWidth = pageWidth - margin * 2;
                     const imgHeight = (canvas.height * imgWidth) / canvas.width;
                     const pageContentHeight = pageHeight - margin * 2;
