@@ -805,7 +805,6 @@
         }
         .charts-grid {
             display: grid;
-            /* AUMENTADO O TAMANHO MINIMO DAS COLUNAS PARA DEIXAR OS GRAFICOS MAIORES */
             grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
             gap: 20px;
             margin-top: 20px;
@@ -833,7 +832,6 @@
             border-bottom: 1px solid #E8EAF6;
             padding-bottom: 8px;
         }
-        /* AUMENTADO A ALTURA MAXIMA DOS GRAFICOS PARA MELHOR VISUALIZACAO */
         .chart-container canvas { max-height: 480px; max-width: 100%; }
         
         .chart-container.chart-container-produtos {
@@ -1495,8 +1493,23 @@
                         <input type="month" class="form-input" id="dashFiltroMes" style="min-width: 160px;">
                     </div>
                     <div class="filter-group">
-                        <label class="filter-label">🏭 Área</label>
+                        <label class="filter-label">🏭 Área 1</label>
                         <select class="form-select" id="dashFiltroArea" style="min-width: 160px;">
+                            <option value="">Todas as Áreas</option>
+                            <option value="Produção">Produção</option>
+                            <option value="Qualidade">Qualidade</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Expedição">Expedição</option>
+                            <option value="Comercial">Comercial</option>
+                            <option value="Compras">Compras</option>
+                            <option value="Manutenção">Manutenção</option>
+                            <option value="Administrativo">Administrativo</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">🏭 Área 2</label>
+                        <select class="form-select" id="dashFiltroArea2" style="min-width: 160px;">
                             <option value="">Todas as Áreas</option>
                             <option value="Produção">Produção</option>
                             <option value="Qualidade">Qualidade</option>
@@ -1538,7 +1551,6 @@
                         <h3>Ocorrências Abertas vs Concluídas</h3>
                         <canvas id="graficoStatus"></canvas>
                     </div>
-                    <!-- NOVO GRÁFICO ADICIONADO AQUI -->
                     <div class="chart-container">
                         <h3>Reclamações por Região</h3>
                         <canvas id="graficoRegiao"></canvas>
@@ -1725,9 +1737,9 @@
             let chartStatus = null;
             let chartAtrasosProrrogacao = null;
             let chartNfNfdArea = null;
-            let chartVendasReclamacoes = null; // Novo gráfico
-            let chartRegiao = null;            // Novo gráfico de Região
-            let vendasMesTributada = null;     // Variável para armazenar o valor das vendas
+            let chartVendasReclamacoes = null;
+            let chartRegiao = null;
+            let vendasMesTributada = null;
 
             const $ = (id) => document.getElementById(id);
 
@@ -1785,6 +1797,7 @@
             const dashFiltroData = $('dashFiltroData');
             const dashFiltroMes = $('dashFiltroMes');
             const dashFiltroArea = $('dashFiltroArea');
+            const dashFiltroArea2 = $('dashFiltroArea2');
             const dashFiltroOrigem = $('dashFiltroOrigem');
             const btnLimparFiltrosDash = $('btnLimparFiltrosDash');
             const btnGerarPDF = $('btnGerarPDF');
@@ -1795,8 +1808,8 @@
             const canvasStatus = $('graficoStatus');
             const canvasAtrasosProrrogacao = $('graficoAtrasosProrrogacao');
             const canvasNfNfdArea = $('graficoNfNfdArea');
-            const canvasVendasReclamacoes = $('graficoVendasReclamacoes'); // Novo Canvas
-            const canvasRegiao = $('graficoRegiao');                         // Novo Canvas de Região
+            const canvasVendasReclamacoes = $('graficoVendasReclamacoes');
+            const canvasRegiao = $('graficoRegiao');
             const listaAtrasosProrrogacao = $('listaAtrasosProrrogacao');
             const listaAtrasosPorCliente = $('listaAtrasosPorCliente');
             const mediaAtrasosProrrogacao = $('mediaAtrasosProrrogacao');
@@ -2985,12 +2998,16 @@
             function filtrarRegistrosDashboard() {
                 const dataFiltro = dashFiltroData.value;
                 const mesFiltro = dashFiltroMes.value;
-                const areaFiltro = dashFiltroArea ? dashFiltroArea.value : '';
+                const areaFiltro1 = dashFiltroArea ? dashFiltroArea.value : '';
+                const areaFiltro2 = dashFiltroArea2 ? dashFiltroArea2.value : '';
                 const origemFiltro = dashFiltroOrigem ? dashFiltroOrigem.value : '';
+
+                const areasSelecionadas = [areaFiltro1, areaFiltro2].filter(a => a);
+
                 return registros.filter(r => {
                     if (dataFiltro && r.dataOcorrencia !== dataFiltro) return false;
                     if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
-                    if (areaFiltro && normalizarArea(r.areaEnvolvida) !== areaFiltro) return false;
+                    if (areasSelecionadas.length > 0 && !areasSelecionadas.includes(normalizarArea(r.areaEnvolvida))) return false;
                     if (origemFiltro && (r.origem || 'Interno') !== origemFiltro) return false;
                     return true;
                 });
@@ -3084,7 +3101,6 @@
             function popularListaAtrasosPorCliente(dados) {
                 if (!listaAtrasosPorCliente) return;
 
-                // Filtro mudou de 'Transporte' para 'Comercial'
                 const dadosComercial = dados.filter(r => normalizarArea(r.areaEnvolvida) === 'Comercial');
 
                 if (dadosComercial.length === 0) {
@@ -3093,7 +3109,6 @@
                     return;
                 }
 
-                // Ordenar por cliente (opcional, mas bom para organização)
                 dadosComercial.sort((a, b) => (a.cliente || '').localeCompare(b.cliente || ''));
 
                 let html = '<table class="tabela-atrasos-prorrogacao">';
@@ -3158,10 +3173,8 @@
                             animation: false,
                             layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } },
                             plugins: {
-                                // AUMENTADO O TAMANHO DA FONTE DA LEGENDA
                                 legend: { position: 'bottom', labels: { font: { size: 12 } } },
                                 datalabels: {
-                                    // AUMENTADO O TAMANHO DA FONTE DOS NUMEROS
                                     color: '#fff', font: { weight: 'bold', size: 16 },
                                     formatter: (v) => v, anchor: 'center', align: 'center'
                                 }
@@ -3317,7 +3330,6 @@
                             datalabels: {
                                 anchor: 'end', align: 'end', offset: 6, clamp: false,
                                 color: '#3C1053',
-                                // AUMENTADO O TAMANHO DA FONTE DOS NUMEROS
                                 font: { weight: 'bold', size: 16 },
                                 backgroundColor: 'rgba(255,255,255,0.9)',
                                 borderRadius: 4,
@@ -3329,9 +3341,6 @@
                     }
                 });
 
-                // ==========================================================
-                // NOVO GRÁFICO: Reclamações por Região
-                // ==========================================================
                 const regiaoMap = new Map();
                 dados.forEach(r => {
                     const regiao = r.regiao || 'Não informada';
@@ -3484,17 +3493,13 @@
                     ctx.fillText('Sem valores de Nf / Nfd nos filtros selecionados', canvasNfNfdArea.width / 2, canvasNfNfdArea.height / 2);
                 }
 
-                // ==========================================================
-                // NOVO GRÁFICO: Vendas no Mês Tributada x Reclamações do Mês
-                // ==========================================================
                 if (vendasMesTributada !== null && vendasMesTributada !== undefined) {
                     const totalReclamacoes = dados.length;
 
-                    // Calcular a média mensal de reclamações
                     const mesesSet = new Set();
                     dados.forEach(r => {
                         if (r.dataOcorrencia) {
-                            mesesSet.add(r.dataOcorrencia.substring(0, 7)); // YYYY-MM
+                            mesesSet.add(r.dataOcorrencia.substring(0, 7));
                         }
                     });
                     const numMeses = mesesSet.size || 1;
@@ -3648,10 +3653,9 @@
                     return;
                 }
 
-                // Solicita o valor de vendas
                 const inputVendas = prompt("Digite a quantidade de vendas no mês tributada:");
-                if (inputVendas === null) return; // Usuário cancelou
-                
+                if (inputVendas === null) return;
+
                 const vendasFormatadas = parseValorBR(inputVendas);
                 if (vendasFormatadas === null || isNaN(vendasFormatadas)) {
                     mostrarToast('Por favor, insira um número válido para as vendas.', 'error');
@@ -3659,9 +3663,8 @@
                 }
                 vendasMesTributada = vendasFormatadas;
 
-                // Atualiza o dashboard para renderizar o novo gráfico antes de gerar o PDF
                 renderizarDashboard();
-                await new Promise(resolve => setTimeout(resolve, 800)); // Aguarda o Chart.js renderizar
+                await new Promise(resolve => setTimeout(resolve, 800));
 
                 const originalText = btnGerarPDF.innerHTML;
                 btnGerarPDF.disabled = true;
@@ -3692,8 +3695,10 @@
 
                 const dataFiltro = dashFiltroData.value;
                 const mesFiltro = dashFiltroMes.value;
-                const areaFiltro = dashFiltroArea ? dashFiltroArea.value : '';
-                
+                const areaFiltro1 = dashFiltroArea ? dashFiltroArea.value : '';
+                const areaFiltro2 = dashFiltroArea2 ? dashFiltroArea2.value : '';
+                const areasSelecionadas = [areaFiltro1, areaFiltro2].filter(a => a);
+
                 let filtroTexto = isTotal
                     ? 'Origem: 🏭 Interno + 🌐 Externo (Total)'
                     : `Origem: ${origemFiltro === 'Interno' ? '🏭 Interno' : '🌐 Externo'}`;
@@ -3707,14 +3712,14 @@
                                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
                     filtroTexto += ` · Mês: ${meses[parseInt(mes, 10) - 1]}/${ano}`;
                 }
-                if (areaFiltro) {
-                    filtroTexto += ` · Área: ${areaFiltro}`;
+                if (areasSelecionadas.length > 0) {
+                    filtroTexto += ` · Área(s): ${areasSelecionadas.join(' + ')}`;
                 }
 
                 const dados = registros.filter(r => {
                     if (dataFiltro && r.dataOcorrencia !== dataFiltro) return false;
                     if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
-                    if (areaFiltro && normalizarArea(r.areaEnvolvida) !== areaFiltro) return false;
+                    if (areasSelecionadas.length > 0 && !areasSelecionadas.includes(normalizarArea(r.areaEnvolvida))) return false;
                     if (!isTotal && (r.origem || 'Interno') !== origemFiltro) return false;
                     return true;
                 });
@@ -3750,7 +3755,6 @@
 
                 const tituloOrigem = isTotal ? 'TOTAL (INTERNO + EXTERNO)' : origemFiltro.toUpperCase();
 
-                // Correção do corte do PDF: Adicionando estilo e padding para as tabelas
                 container.innerHTML = `
                     <style>
                         .tabela-pdf { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; margin-bottom: 10px; }
@@ -3921,7 +3925,6 @@
 
                         const listaConteudo = document.createElement('div');
                         listaConteudo.innerHTML = listaOrig.innerHTML;
-                        // Correção do corte: Adicionar classe tabela-pdf
                         const table = listaConteudo.querySelector('table');
                         if (table) table.classList.add('tabela-pdf');
                         
@@ -3950,13 +3953,11 @@
                         listaHeader2.style.fontWeight = '800';
                         listaHeader2.style.letterSpacing = '1px';
                         listaHeader2.style.textTransform = 'uppercase';
-                        // Header do PDF mudou de Transporte para Comercial
                         listaHeader2.textContent = '👥 Reclamações Comercial (Cliente, Região, Nf/Nfd, Causa)';
                         extraWrapper2.appendChild(listaHeader2);
 
                         const listaConteudo2 = document.createElement('div');
                         listaConteudo2.innerHTML = listaClienteOrig.innerHTML;
-                        // Correção do corte: Adicionar classe tabela-pdf
                         const table2 = listaConteudo2.querySelector('table');
                         if (table2) table2.classList.add('tabela-pdf');
                         
@@ -3987,7 +3988,6 @@
 
                 const pageWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
-                // Correção do corte: Aumentar a margem para 12mm
                 const margin = 12;
                 const imgWidth = pageWidth - margin * 2;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -4341,6 +4341,9 @@
             if (dashFiltroArea) {
                 dashFiltroArea.addEventListener('change', renderizarDashboard);
             }
+            if (dashFiltroArea2) {
+                dashFiltroArea2.addEventListener('change', renderizarDashboard);
+            }
             if (dashFiltroOrigem) {
                 dashFiltroOrigem.addEventListener('change', renderizarDashboard);
             }
@@ -4349,6 +4352,7 @@
                 dashFiltroData.value = '';
                 dashFiltroMes.value = '';
                 if (dashFiltroArea) dashFiltroArea.value = '';
+                if (dashFiltroArea2) dashFiltroArea2.value = '';
                 if (dashFiltroOrigem) dashFiltroOrigem.value = '';
                 renderizarDashboard();
                 mostrarToast('Filtros do dashboard removidos!', 'warning');
