@@ -834,7 +834,7 @@
             padding-bottom: 8px;
         }
         /* AUMENTADO A ALTURA MAXIMA DOS GRAFICOS PARA MELHOR VISUALIZACAO */
-        .chart-container canvas { max-height: 380px; max-width: 100%; }
+        .chart-container canvas { max-height: 480px; max-width: 100%; }
         
         .chart-container.chart-container-produtos {
             grid-column: 1 / -1;
@@ -1005,7 +1005,7 @@
             background-color: var(--bg);
             background-image:
                 linear-gradient(135deg, rgba(26, 0, 51, 0.82) 0%, rgba(45, 10, 78, 0.80) 30%, rgba(60, 16, 83, 0.80) 70%, rgba(26, 0, 51, 0.82) 100%),
-                url('logo.png');
+                url('logo2.png');
             background-size: cover, contain;
             background-position: center center, center center;
             background-repeat: no-repeat, no-repeat;
@@ -1052,6 +1052,13 @@
             color: #fff;
             box-shadow: 0 10px 30px rgba(124, 58, 237, 0.5);
             animation: iconPulse 3s ease-in-out infinite;
+            overflow: hidden;
+        }
+        .login-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
         .login-box h2 {
             font-size: 1.3rem;
@@ -1203,7 +1210,9 @@
 
     <div class="login-overlay" id="loginOverlay">
         <div class="login-box">
-            <div class="login-logo">📦</div>
+            <div class="login-logo">
+                <img src="logo2.png" alt="DONA RITA EMBALAGENS">
+            </div>
             <h2>DONA RITA EMBALAGENS</h2>
             <div class="login-subtitle">Sistema SAC · Acesso Restrito</div>
             <form id="formLogin" autocomplete="off">
@@ -3254,15 +3263,28 @@
                             }]
                         },
                         options: {
-                            responsive: true, maintainAspectRatio: true, animation: false,
-                            layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } },
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            animation: false,
+                            layout: { padding: { top: 20, bottom: 20, left: 20, right: 20 } },
                             plugins: {
-                                // AUMENTADO O TAMANHO DA FONTE DA LEGENDA
-                                legend: { position: 'bottom', labels: { font: { size: 12 } } },
+                                legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } },
+                                tooltip: { enabled: true },
                                 datalabels: {
-                                    // AUMENTADO O TAMANHO DA FONTE DOS NUMEROS
-                                    color: '#fff', font: { weight: 'bold', size: 14 },
-                                    formatter: (v) => v, anchor: 'center', align: 'center'
+                                    color: '#fff',
+                                    font: { weight: 'bold', size: 14 },
+                                    formatter: (v) => v,
+                                    anchor: 'center',
+                                    align: 'center',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                                    borderRadius: 4,
+                                    padding: { top: 2, bottom: 2, left: 5, right: 5 },
+                                    display: function(context) {
+                                        var valor = context.dataset.data[context.dataIndex];
+                                        var total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        var percentual = (valor / total) * 100;
+                                        return percentual > 3;
+                                    }
                                 }
                             }
                         }
