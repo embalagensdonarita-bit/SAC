@@ -2,8 +2,19 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>DONA RITA EMBALAGENS (SAC) - Sistema de Não Conformidades</title>
+
+    <!-- ====== PWA / INSTALAÇÃO COMO APP ====== -->
+    <meta name="theme-color" content="#3C1053">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SAC Dona Rita">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="logo2.png">
+    <link rel="apple-touch-icon" href="logo2.png">
+    <!-- ======================================= -->
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
@@ -229,6 +240,38 @@
             border-color: rgba(255, 120, 120, 0.6);
             transform: translateY(-1px);
         }
+
+        /* ====== BOTÃO DE INSTALAR APP ====== */
+        .btn-install-app {
+            display: none;
+            align-items: center;
+            gap: 7px;
+            background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+            border: 1.5px solid rgba(255,255,255,0.4);
+            color: #fff;
+            padding: 9px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 800;
+            transition: var(--transition);
+            font-family: var(--font);
+            box-shadow: 0 6px 22px rgba(124, 58, 237, 0.55);
+            animation: btnInstallPulse 2s ease-in-out infinite;
+            letter-spacing: 0.3px;
+        }
+        .btn-install-app.show { display: inline-flex; }
+        .btn-install-app:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(124, 58, 237, 0.8);
+        }
+        .btn-install-app:active { transform: translateY(0); }
+        @keyframes btnInstallPulse {
+            0%, 100% { box-shadow: 0 6px 22px rgba(124, 58, 237, 0.55); }
+            50% { box-shadow: 0 6px 32px rgba(124, 58, 237, 0.95); }
+        }
+        /* ==================================== */
+
         .container {
             max-width: 100%; width: 100%;
             margin: 0; padding: 24px;
@@ -1255,6 +1298,9 @@
                         <div class="stat-label">⚠️ Em Atraso</div>
                     </div>
                 </div>
+                <button class="btn-install-app" id="btnInstallApp" title="Instalar como app no celular">
+                    📲 Baixar App
+                </button>
                 <div class="user-info" id="userInfo">
                     <span>👤 -</span>
                     <span class="user-role">-</span>
@@ -1832,6 +1878,115 @@
             const userTipo = $('userTipo');
             const tabelaUsuarios = $('tabelaUsuarios');
             const tabBtnUsuarios = $('tabBtnUsuarios');
+
+            // ========================================================
+            // PWA - BOTÃO DE INSTALAR APP
+            // ========================================================
+            const btnInstallApp = $('btnInstallApp');
+            let deferredPrompt = null;
+
+            function isAppInstalled() {
+                try {
+                    return window.matchMedia('(display-mode: standalone)').matches
+                        || window.matchMedia('(display-mode: fullscreen)').matches
+                        || window.matchMedia('(display-mode: minimal-ui)').matches
+                        || window.navigator.standalone === true
+                        || document.referrer.startsWith('android-app://');
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            function esconderBotaoInstall() {
+                if (btnInstallApp) {
+                    btnInstallApp.classList.remove('show');
+                    btnInstallApp.style.display = 'none';
+                }
+            }
+
+            function mostrarBotaoInstall() {
+                if (btnInstallApp && !isAppInstalled()) {
+                    btnInstallApp.classList.add('show');
+                    btnInstallApp.style.display = 'inline-flex';
+                }
+            }
+
+            // Se já estiver rodando como app instalado, esconde o botão
+            if (isAppInstalled()) {
+                esconderBotaoInstall();
+            }
+
+            // Detecta quando o app já está instalado via matchMedia
+            try {
+                const mqStandalone = window.matchMedia('(display-mode: standalone)');
+                if (mqStandalone.addEventListener) {
+                    mqStandalone.addEventListener('change', (e) => {
+                        if (e.matches) esconderBotaoInstall();
+                    });
+                }
+            } catch (e) { /* ignora */ }
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                if (!isAppInstalled()) {
+                    mostrarBotaoInstall();
+                }
+            });
+
+            if (btnInstallApp) {
+                btnInstallApp.addEventListener('click', async () => {
+                    if (isAppInstalled()) {
+                        esconderBotaoInstall();
+                        return;
+                    }
+
+                    if (!deferredPrompt) {
+                        // Fallback: orienta instalação manual
+                        const ua = navigator.userAgent || '';
+                        let instrucoes = 'Para instalar o app:\n\n';
+                        if (/Android/i.test(ua)) {
+                            instrucoes += '1) Toque no menu do navegador (⋮)\n2) Escolha "Instalar aplicativo" ou "Adicionar à tela inicial"';
+                        } else if (/iPhone|iPad|iPod/i.test(ua)) {
+                            instrucoes += '1) Toque no botão Compartilhar (□↑)\n2) Escolha "Adicionar à Tela de Início"';
+                        } else {
+                            instrucoes += 'Abra no celular (Chrome/Edge) e escolha "Instalar aplicativo" no menu do navegador.';
+                        }
+                        alert(instrucoes);
+                        return;
+                    }
+
+                    try {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log('Resultado da instalação:', outcome);
+                        if (outcome === 'accepted') {
+                            esconderBotaoInstall();
+                        }
+                    } catch (err) {
+                        console.warn('Erro ao solicitar instalação:', err);
+                    }
+                    deferredPrompt = null;
+                });
+            }
+
+            window.addEventListener('appinstalled', () => {
+                console.log('✅ App instalado com sucesso!');
+                esconderBotaoInstall();
+                deferredPrompt = null;
+            });
+
+            // Registra o Service Worker (necessário para PWA)
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('sw.js').then((reg) => {
+                        console.log('✅ Service Worker registrado:', reg.scope);
+                    }).catch((err) => {
+                        console.warn('⚠️ Service Worker não registrado (opcional):', err.message);
+                    });
+                });
+            }
+            // ========================================================
 
             const listaProdutos = [
                 { codigo: '100001', descricao: 'D32 R PR' },
