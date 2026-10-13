@@ -1531,16 +1531,20 @@
 
                 <div class="filter-bar">
                     <div class="filter-group">
-                        <label class="filter-label">📅 Dia Específico</label>
-                        <input type="date" class="form-input" id="dashFiltroData" style="min-width: 160px;">
+                        <label class="filter-label">📅 Data Início</label>
+                        <input type="date" class="form-input" id="dashFiltroDataInicio" style="min-width: 150px;">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">📅 Data Fim</label>
+                        <input type="date" class="form-input" id="dashFiltroDataFim" style="min-width: 150px;">
                     </div>
                     <div class="filter-group">
                         <label class="filter-label">📆 Mês</label>
-                        <input type="month" class="form-input" id="dashFiltroMes" style="min-width: 160px;">
+                        <input type="month" class="form-input" id="dashFiltroMes" style="min-width: 150px;">
                     </div>
                     <div class="filter-group">
                         <label class="filter-label">🏭 Área 1</label>
-                        <select class="form-select" id="dashFiltroArea" style="min-width: 160px;">
+                        <select class="form-select" id="dashFiltroArea" style="min-width: 140px;">
                             <option value="">Todas as Áreas</option>
                             <option value="Produção">Produção</option>
                             <option value="Qualidade">Qualidade</option>
@@ -1555,7 +1559,52 @@
                     </div>
                     <div class="filter-group">
                         <label class="filter-label">🏭 Área 2</label>
-                        <select class="form-select" id="dashFiltroArea2" style="min-width: 160px;">
+                        <select class="form-select" id="dashFiltroArea2" style="min-width: 140px;">
+                            <option value="">Todas as Áreas</option>
+                            <option value="Produção">Produção</option>
+                            <option value="Qualidade">Qualidade</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Expedição">Expedição</option>
+                            <option value="Comercial">Comercial</option>
+                            <option value="Compras">Compras</option>
+                            <option value="Manutenção">Manutenção</option>
+                            <option value="Administrativo">Administrativo</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">🏭 Área 3</label>
+                        <select class="form-select" id="dashFiltroArea3" style="min-width: 140px;">
+                            <option value="">Todas as Áreas</option>
+                            <option value="Produção">Produção</option>
+                            <option value="Qualidade">Qualidade</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Expedição">Expedição</option>
+                            <option value="Comercial">Comercial</option>
+                            <option value="Compras">Compras</option>
+                            <option value="Manutenção">Manutenção</option>
+                            <option value="Administrativo">Administrativo</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">🏭 Área 4</label>
+                        <select class="form-select" id="dashFiltroArea4" style="min-width: 140px;">
+                            <option value="">Todas as Áreas</option>
+                            <option value="Produção">Produção</option>
+                            <option value="Qualidade">Qualidade</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Expedição">Expedição</option>
+                            <option value="Comercial">Comercial</option>
+                            <option value="Compras">Compras</option>
+                            <option value="Manutenção">Manutenção</option>
+                            <option value="Administrativo">Administrativo</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">🏭 Área 5</label>
+                        <select class="form-select" id="dashFiltroArea5" style="min-width: 140px;">
                             <option value="">Todas as Áreas</option>
                             <option value="Produção">Produção</option>
                             <option value="Qualidade">Qualidade</option>
@@ -1840,10 +1889,14 @@
             const toastContainer = $('toastContainer');
             const globalLoading = $('globalLoading');
 
-            const dashFiltroData = $('dashFiltroData');
+            const dashFiltroDataInicio = $('dashFiltroDataInicio');
+            const dashFiltroDataFim = $('dashFiltroDataFim');
             const dashFiltroMes = $('dashFiltroMes');
             const dashFiltroArea = $('dashFiltroArea');
             const dashFiltroArea2 = $('dashFiltroArea2');
+            const dashFiltroArea3 = $('dashFiltroArea3');
+            const dashFiltroArea4 = $('dashFiltroArea4');
+            const dashFiltroArea5 = $('dashFiltroArea5');
             const dashFiltroOrigem = $('dashFiltroOrigem');
             const btnLimparFiltrosDash = $('btnLimparFiltrosDash');
             const btnGerarPDF = $('btnGerarPDF');
@@ -1911,12 +1964,10 @@
                 }
             }
 
-            // Se já estiver rodando como app instalado, esconde o botão
             if (isAppInstalled()) {
                 esconderBotaoInstall();
             }
 
-            // Detecta quando o app já está instalado via matchMedia
             try {
                 const mqStandalone = window.matchMedia('(display-mode: standalone)');
                 if (mqStandalone.addEventListener) {
@@ -1942,7 +1993,6 @@
                     }
 
                     if (!deferredPrompt) {
-                        // Fallback: orienta instalação manual
                         const ua = navigator.userAgent || '';
                         let instrucoes = 'Para instalar o app:\n\n';
                         if (/Android/i.test(ua)) {
@@ -1976,7 +2026,6 @@
                 deferredPrompt = null;
             });
 
-            // Registra o Service Worker (necessário para PWA)
             if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
                     navigator.serviceWorker.register('sw.js').then((reg) => {
@@ -2662,9 +2711,22 @@
                 andamentoInput.appendChild(fragment);
             }
 
+            // ========================================================
+            // GERA O PRÓXIMO Nº DE REGISTRO AUTOMATICAMENTE
+            // ========================================================
+            function gerarProximoNumeroRegistro() {
+                let maxNum = 0;
+                registros.forEach(r => {
+                    const raw = String(r.numRegistro || '').trim();
+                    const n = parseInt(raw.replace(/[^\d]/g, ''), 10);
+                    if (!isNaN(n) && n > maxNum) maxNum = n;
+                });
+                return maxNum + 1;
+            }
+
             function limparFormulario() {
                 form.reset();
-                numRegistroInput.value = '';
+                numRegistroInput.value = String(gerarProximoNumeroRegistro());
                 representanteClienteInput.value = '';
                 dataOcorrenciaInput.value = new Date().toISOString().split('T')[0];
                 setOrigemSelecionada('Interno');
@@ -3150,17 +3212,26 @@
                 else if (action === 'excluir') excluirRegistro(idx);
             });
 
-            function filtrarRegistrosDashboard() {
-                const dataFiltro = dashFiltroData.value;
-                const mesFiltro = dashFiltroMes.value;
-                const areaFiltro1 = dashFiltroArea ? dashFiltroArea.value : '';
-                const areaFiltro2 = dashFiltroArea2 ? dashFiltroArea2.value : '';
-                const origemFiltro = dashFiltroOrigem ? dashFiltroOrigem.value : '';
+            function obterAreasSelecionadasDashboard() {
+                return [
+                    dashFiltroArea ? dashFiltroArea.value : '',
+                    dashFiltroArea2 ? dashFiltroArea2.value : '',
+                    dashFiltroArea3 ? dashFiltroArea3.value : '',
+                    dashFiltroArea4 ? dashFiltroArea4.value : '',
+                    dashFiltroArea5 ? dashFiltroArea5.value : ''
+                ].filter(a => a);
+            }
 
-                const areasSelecionadas = [areaFiltro1, areaFiltro2].filter(a => a);
+            function filtrarRegistrosDashboard() {
+                const dataInicio = dashFiltroDataInicio ? dashFiltroDataInicio.value : '';
+                const dataFim = dashFiltroDataFim ? dashFiltroDataFim.value : '';
+                const mesFiltro = dashFiltroMes.value;
+                const origemFiltro = dashFiltroOrigem ? dashFiltroOrigem.value : '';
+                const areasSelecionadas = obterAreasSelecionadasDashboard();
 
                 return registros.filter(r => {
-                    if (dataFiltro && r.dataOcorrencia !== dataFiltro) return false;
+                    if (dataInicio && String(r.dataOcorrencia || '') < dataInicio) return false;
+                    if (dataFim && String(r.dataOcorrencia || '') > dataFim) return false;
                     if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
                     if (areasSelecionadas.length > 0 && !areasSelecionadas.includes(normalizarArea(r.areaEnvolvida))) return false;
                     if (origemFiltro && (r.origem || 'Interno') !== origemFiltro) return false;
@@ -3848,20 +3919,22 @@
                 renderizarDashboard();
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
-                const dataFiltro = dashFiltroData.value;
+                const dataInicio = dashFiltroDataInicio ? dashFiltroDataInicio.value : '';
+                const dataFim = dashFiltroDataFim ? dashFiltroDataFim.value : '';
                 const mesFiltro = dashFiltroMes.value;
-                const areaFiltro1 = dashFiltroArea ? dashFiltroArea.value : '';
-                const areaFiltro2 = dashFiltroArea2 ? dashFiltroArea2.value : '';
-                const areasSelecionadas = [areaFiltro1, areaFiltro2].filter(a => a);
+                const areasSelecionadas = obterAreasSelecionadasDashboard();
 
                 let filtroTexto = isTotal
                     ? 'Origem: 🏭 Interno + 🌐 Externo (Total)'
                     : `Origem: ${origemFiltro === 'Interno' ? '🏭 Interno' : '🌐 Externo'}`;
-                if (dataFiltro && mesFiltro) {
-                    filtroTexto += ` · Dia: ${formatarData(dataFiltro)} · Mês: ${mesFiltro}`;
-                } else if (dataFiltro) {
-                    filtroTexto += ` · Dia: ${formatarData(dataFiltro)}`;
-                } else if (mesFiltro) {
+                if (dataInicio && dataFim) {
+                    filtroTexto += ` · Período: ${formatarData(dataInicio)} a ${formatarData(dataFim)}`;
+                } else if (dataInicio) {
+                    filtroTexto += ` · A partir de: ${formatarData(dataInicio)}`;
+                } else if (dataFim) {
+                    filtroTexto += ` · Até: ${formatarData(dataFim)}`;
+                }
+                if (mesFiltro) {
                     const [ano, mes] = mesFiltro.split('-');
                     const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -3872,7 +3945,8 @@
                 }
 
                 const dados = registros.filter(r => {
-                    if (dataFiltro && r.dataOcorrencia !== dataFiltro) return false;
+                    if (dataInicio && String(r.dataOcorrencia || '') < dataInicio) return false;
+                    if (dataFim && String(r.dataOcorrencia || '') > dataFim) return false;
                     if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
                     if (areasSelecionadas.length > 0 && !areasSelecionadas.includes(normalizarArea(r.areaEnvolvida))) return false;
                     if (!isTotal && (r.origem || 'Interno') !== origemFiltro) return false;
@@ -4176,7 +4250,12 @@
                     }
                 }
 
-                const sufixoData = dataFiltro || mesFiltro || 'Completo';
+                let sufixoData = 'Completo';
+                if (dataInicio && dataFim) sufixoData = `${dataInicio}_a_${dataFim}`;
+                else if (dataInicio) sufixoData = `de_${dataInicio}`;
+                else if (dataFim) sufixoData = `ate_${dataFim}`;
+                else if (mesFiltro) sufixoData = mesFiltro;
+
                 const nomeArquivo = `Dashboard_SAC_${origemFiltro}_${sufixoData}_${agora.toISOString().split('T')[0]}.pdf`;
                 pdf.save(nomeArquivo);
 
@@ -4491,7 +4570,8 @@
             filtroMes.addEventListener('change', renderizarTabela);
             filtroBusca.addEventListener('input', renderizarTabelaDebounced);
 
-            dashFiltroData.addEventListener('change', renderizarDashboard);
+            if (dashFiltroDataInicio) dashFiltroDataInicio.addEventListener('change', renderizarDashboard);
+            if (dashFiltroDataFim) dashFiltroDataFim.addEventListener('change', renderizarDashboard);
             dashFiltroMes.addEventListener('change', renderizarDashboard);
             if (dashFiltroArea) {
                 dashFiltroArea.addEventListener('change', renderizarDashboard);
@@ -4499,15 +4579,28 @@
             if (dashFiltroArea2) {
                 dashFiltroArea2.addEventListener('change', renderizarDashboard);
             }
+            if (dashFiltroArea3) {
+                dashFiltroArea3.addEventListener('change', renderizarDashboard);
+            }
+            if (dashFiltroArea4) {
+                dashFiltroArea4.addEventListener('change', renderizarDashboard);
+            }
+            if (dashFiltroArea5) {
+                dashFiltroArea5.addEventListener('change', renderizarDashboard);
+            }
             if (dashFiltroOrigem) {
                 dashFiltroOrigem.addEventListener('change', renderizarDashboard);
             }
 
             btnLimparFiltrosDash.addEventListener('click', () => {
-                dashFiltroData.value = '';
+                if (dashFiltroDataInicio) dashFiltroDataInicio.value = '';
+                if (dashFiltroDataFim) dashFiltroDataFim.value = '';
                 dashFiltroMes.value = '';
                 if (dashFiltroArea) dashFiltroArea.value = '';
                 if (dashFiltroArea2) dashFiltroArea2.value = '';
+                if (dashFiltroArea3) dashFiltroArea3.value = '';
+                if (dashFiltroArea4) dashFiltroArea4.value = '';
+                if (dashFiltroArea5) dashFiltroArea5.value = '';
                 if (dashFiltroOrigem) dashFiltroOrigem.value = '';
                 renderizarDashboard();
                 mostrarToast('Filtros do dashboard removidos!', 'warning');
@@ -4574,6 +4667,9 @@
                     dataOcorrenciaInput.value = new Date().toISOString().split('T')[0];
                     setOrigemSelecionada('Interno');
                     popularSelectAndamento(false);
+
+                    // Preenche automaticamente o Nº Registro com o próximo número disponível
+                    numRegistroInput.value = String(gerarProximoNumeroRegistro());
 
                     renderizarTabela();
                     renderizarDashboard();
