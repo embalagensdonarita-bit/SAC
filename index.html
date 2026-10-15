@@ -1457,6 +1457,9 @@
                                 <button type="button" class="btn btn-primary" id="btnAbrirLote">
                                     📋 Abrir Várias Reclamações
                                 </button>
+                                <button type="button" class="btn btn-pdf" id="btnImportacaoRapida">
+                                    ⚡ Importação Rápida (Colar)
+                                </button>
                                 <button type="button" class="btn btn-outline" id="btnLimpar">
                                     🧹 Limpar Formulário
                                 </button>
@@ -1771,6 +1774,97 @@
             </div>
         </div>
     </div>
+
+    <!-- ========= MODAL DE IMPORTAÇÃO RÁPIDA (COLAR EM MASSA) ========= -->
+    <div class="modal-overlay" id="modalImportOverlay">
+        <div class="modal" style="max-width: 1250px; width: 96%; max-height: 92vh;">
+            <div class="modal-header">
+                <h3>⚡ Importação Rápida em Massa (Colar)</h3>
+                <button class="modal-close" id="modalImportClose">&times;</button>
+            </div>
+            <div style="margin-bottom: 14px; padding: 12px 14px; background: #EDE7F6; border-left: 5px solid #7C3AED; border-radius: 10px; font-size: 0.82rem; color: #3C1053; font-weight: 600;">
+                ℹ️ <strong>Como usar:</strong> Cole uma coluna por vez (copie uma coluna do Excel e cole aqui). Cada linha vira uma reclamação. Se um campo tiver <strong>1 única linha</strong>, ela será aplicada a todos os registros. O Nº de Registro é gerado automaticamente se ficar vazio.
+            </div>
+
+            <div style="background:#F3E5F5; padding:12px 14px; border-radius:10px; margin-bottom:14px;">
+                <div style="font-weight:800; color:#3C1053; margin-bottom:10px; font-size:0.82rem; text-transform:uppercase; letter-spacing:0.8px;">📌 Campos Comuns (aplicados a todos)</div>
+                <div class="form-grid" style="grid-template-columns:repeat(4,1fr); gap:12px;">
+                    <div class="form-group">
+                        <label class="form-label">Data da Ocorrência <span class="required">*</span></label>
+                        <input type="date" class="form-input" id="importData">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Área Envolvida <span class="required">*</span></label>
+                        <select class="form-select" id="importArea">
+                            <option value="">Selecione...</option>
+                            <option value="Produção">Produção</option>
+                            <option value="Qualidade">Qualidade</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Expedição">Expedição</option>
+                            <option value="Comercial">Comercial</option>
+                            <option value="Compras">Compras</option>
+                            <option value="Manutenção">Manutenção</option>
+                            <option value="Administrativo">Administrativo</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Origem</label>
+                        <select class="form-select" id="importOrigem">
+                            <option value="Interno" selected>🏭 Interno</option>
+                            <option value="Externo">🌐 Externo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Representante / Reclamante <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="importRepresentante" placeholder="Nome de quem reclamou">
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-weight:800; color:#3C1053; margin-bottom:8px; font-size:0.82rem; text-transform:uppercase; letter-spacing:0.8px;">📋 Dados por Linha (1 valor por linha)</div>
+            <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:10px;">
+                <div class="form-group">
+                    <label class="form-label">Nº Registro</label>
+                    <textarea class="form-textarea" id="importNums" rows="8" style="font-family:monospace; font-size:0.78rem;" placeholder="(vazio = auto)"></textarea>
+                    <small style="color:#5C5C8A; font-size:0.68rem;">Opcional · 1 por linha</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cliente <span class="required">*</span></label>
+                    <textarea class="form-textarea" id="importClientes" rows="8" style="font-family:monospace; font-size:0.78rem;" placeholder="Cole aqui a lista de clientes"></textarea>
+                    <small style="color:#5C5C8A; font-size:0.68rem;">1 por linha</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nota Fiscal (NF)</label>
+                    <textarea class="form-textarea" id="importNFs" rows="8" style="font-family:monospace; font-size:0.78rem;" placeholder="Cole aqui os números das NFs"></textarea>
+                    <small style="color:#5C5C8A; font-size:0.68rem;">1 por linha</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Causa Resumida <span class="required">*</span></label>
+                    <textarea class="form-textarea" id="importCausasRes" rows="8" style="font-family:monospace; font-size:0.78rem;" placeholder="Cole aqui as causas resumidas"></textarea>
+                    <small style="color:#5C5C8A; font-size:0.68rem;">1 por linha</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Causa Completa <span class="required">*</span></label>
+                    <textarea class="form-textarea" id="importCausasComp" rows="8" style="font-family:monospace; font-size:0.78rem;" placeholder="Cole aqui as causas completas"></textarea>
+                    <small style="color:#5C5C8A; font-size:0.68rem;">1 por linha</small>
+                </div>
+            </div>
+
+            <div id="importPreviewWrap" style="margin-top:14px; display:none;">
+                <div class="subtitulo-lista"><span class="icon">👁️</span> Pré-visualização: <span id="importPreviewCount">0</span> registro(s)</div>
+                <div id="importPreview" class="lista-atrasos-prorrogacao" style="max-height:30vh; margin-top:8px;"></div>
+            </div>
+
+            <div class="btn-group" style="margin-top:18px; justify-content:space-between; align-items:center;">
+                <button type="button" class="btn btn-outline" id="btnPreviewImport">👁️ Pré-visualizar</button>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button type="button" class="btn btn-success" id="btnSalvarImport">💾 Salvar Tudo</button>
+                    <button type="button" class="btn btn-outline" id="btnCancelImport">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- ================================================================ -->
 
     <div id="toastContainer"></div>
@@ -1965,6 +2059,26 @@
             const btnAddLoteRow = $('btnAddLoteRow');
             const btnSalvarLote = $('btnSalvarLote');
             const btnCancelarLote = $('btnCancelarLote');
+
+            // ===== REFERÊNCIAS DA IMPORTAÇÃO RÁPIDA =====
+            const btnImportacaoRapida = $('btnImportacaoRapida');
+            const modalImportOverlay = $('modalImportOverlay');
+            const modalImportClose = $('modalImportClose');
+            const importData = $('importData');
+            const importArea = $('importArea');
+            const importOrigem = $('importOrigem');
+            const importRepresentante = $('importRepresentante');
+            const importNums = $('importNums');
+            const importClientes = $('importClientes');
+            const importNFs = $('importNFs');
+            const importCausasRes = $('importCausasRes');
+            const importCausasComp = $('importCausasComp');
+            const importPreviewWrap = $('importPreviewWrap');
+            const importPreview = $('importPreview');
+            const importPreviewCount = $('importPreviewCount');
+            const btnPreviewImport = $('btnPreviewImport');
+            const btnSalvarImport = $('btnSalvarImport');
+            const btnCancelImport = $('btnCancelImport');
 
             // ========================================================
             // PWA - BOTÃO DE INSTALAR APP
@@ -4912,6 +5026,269 @@
             if (modalLoteOverlay) {
                 modalLoteOverlay.addEventListener('click', (e) => {
                     if (e.target === modalLoteOverlay) fecharModalLote();
+                });
+            }
+            // ========================================================
+
+            // ========================================================
+            // IMPORTAÇÃO RÁPIDA - COLAR COLUNAS
+            // ========================================================
+            function parseLinhasTexto(texto) {
+                return String(texto || '').split('\n').map(s => s.trim()).filter(s => s !== '');
+            }
+
+            function abrirModalImport() {
+                if (!isAdmin()) {
+                    mostrarToast('Apenas administradores podem importar.', 'error');
+                    return;
+                }
+                importData.value = new Date().toISOString().split('T')[0];
+                importArea.value = '';
+                importOrigem.value = 'Interno';
+                importRepresentante.value = '';
+                importNums.value = '';
+                importClientes.value = '';
+                importNFs.value = '';
+                importCausasRes.value = '';
+                importCausasComp.value = '';
+                importPreviewWrap.style.display = 'none';
+                importPreview.innerHTML = '';
+                modalImportOverlay.classList.add('active');
+            }
+
+            function fecharModalImport() {
+                modalImportOverlay.classList.remove('active');
+            }
+
+            function construirRegistrosImport() {
+                const cols = {
+                    nums: parseLinhasTexto(importNums.value),
+                    clientes: parseLinhasTexto(importClientes.value),
+                    nfs: parseLinhasTexto(importNFs.value),
+                    causasRes: parseLinhasTexto(importCausasRes.value),
+                    causasComp: parseLinhasTexto(importCausasComp.value)
+                };
+
+                const N = cols.clientes.length;
+                if (N === 0) {
+                    return { erro: 'Cole ao menos a lista de Clientes.' };
+                }
+
+                const colunas = [
+                    { chave: 'nfs', nome: 'Nota Fiscal (NF)', obrigatorio: false },
+                    { chave: 'causasRes', nome: 'Causa Resumida', obrigatorio: true },
+                    { chave: 'causasComp', nome: 'Causa Completa', obrigatorio: true },
+                    { chave: 'nums', nome: 'Nº Registro', obrigatorio: false }
+                ];
+
+                for (const c of colunas) {
+                    const arr = cols[c.chave];
+                    if (arr.length === 0) {
+                        if (c.obrigatorio) {
+                            return { erro: `O campo "${c.nome}" está vazio.` };
+                        }
+                        continue;
+                    }
+                    if (arr.length !== 1 && arr.length !== N) {
+                        return { erro: `O campo "${c.nome}" tem ${arr.length} linha(s), mas precisa ter 1 (aplicar a todos) ou ${N} (uma por cliente).` };
+                    }
+                }
+
+                let maxExistente = 0;
+                registros.forEach(r => {
+                    const n = parseInt(String(r.numRegistro || '').replace(/\D/g, ''), 10);
+                    if (!isNaN(n) && n > maxExistente) maxExistente = n;
+                });
+                let proximoAuto = maxExistente + 1;
+
+                const numerosJaUsados = new Set();
+                const pegar = (arr, i) => {
+                    if (arr.length === 0) return '';
+                    if (arr.length === 1) return arr[0];
+                    return arr[i];
+                };
+
+                const out = [];
+                for (let i = 0; i < N; i++) {
+                    let num = pegar(cols.nums, i);
+                    if (!num) {
+                        while (numerosJaUsados.has(proximoAuto)) proximoAuto++;
+                        num = String(proximoAuto);
+                        proximoAuto++;
+                    }
+                    numerosJaUsados.add(num);
+                    out.push({
+                        numRegistro: num,
+                        cliente: pegar(cols.clientes, i),
+                        notaFiscal: pegar(cols.nfs, i),
+                        causaResumida: pegar(cols.causasRes, i),
+                        causaCompleta: pegar(cols.causasComp, i)
+                    });
+                }
+                return { registros: out };
+            }
+
+            function previewImportacao() {
+                const resultado = construirRegistrosImport();
+                if (resultado.erro) {
+                    importPreviewWrap.style.display = 'none';
+                    mostrarToast(resultado.erro, 'error');
+                    return;
+                }
+                const linhas = resultado.registros;
+                importPreviewCount.textContent = linhas.length;
+
+                if (linhas.length === 0) {
+                    importPreviewWrap.style.display = 'none';
+                    return;
+                }
+
+                let html = '<table class="tabela-atrasos-prorrogacao"><thead><tr>';
+                html += '<th>#</th>';
+                html += '<th>Nº</th>';
+                html += '<th>Cliente</th>';
+                html += '<th>Nota Fiscal</th>';
+                html += '<th>Causa Resumida</th>';
+                html += '<th>Causa Completa</th>';
+                html += '<th>Status</th>';
+                html += '</tr></thead><tbody>';
+
+                linhas.forEach((l, i) => {
+                    const faltando = [];
+                    if (!l.cliente) faltando.push('Cliente');
+                    if (!l.causaResumida) faltando.push('Causa Res.');
+                    if (!l.causaCompleta) faltando.push('Causa Comp.');
+                    const status = faltando.length === 0
+                        ? '<span style="color:#388E3C; font-weight:800;">✅ OK</span>'
+                        : `<span style="color:#C62828; font-weight:800;">❌ ${faltando.join(', ')}</span>`;
+
+                    const clienteSafe = String(l.cliente || '-').replace(/"/g, '&quot;');
+                    const nfSafe = String(l.notaFiscal || '-').replace(/"/g, '&quot;');
+                    const crSafe = String(l.causaResumida || '-').replace(/"/g, '&quot;');
+                    const ccSafe = String(l.causaCompleta || '-').replace(/"/g, '&quot;');
+
+                    html += '<tr>';
+                    html += `<td style="font-weight:800;">${i+1}</td>`;
+                    html += `<td><strong>#${l.numRegistro}</strong></td>`;
+                    html += `<td title="${clienteSafe}">${l.cliente || '-'}</td>`;
+                    html += `<td title="${nfSafe}">${l.notaFiscal || '-'}</td>`;
+                    html += `<td title="${crSafe}" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.causaResumida || '-'}</td>`;
+                    html += `<td title="${ccSafe}" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.causaCompleta || '-'}</td>`;
+                    html += `<td>${status}</td>`;
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table>';
+                importPreview.innerHTML = html;
+                importPreviewWrap.style.display = 'block';
+            }
+
+            async function salvarImportacao() {
+                if (!isAdmin()) {
+                    mostrarToast('Apenas administradores podem salvar.', 'error');
+                    return;
+                }
+
+                const dataOcorrencia = importData.value;
+                const areaEnvolvida = importArea.value;
+                const origem = importOrigem.value;
+                const representante = importRepresentante.value.trim();
+
+                if (!dataOcorrencia) { mostrarToast('Preencha a Data da Ocorrência.', 'error'); return; }
+                if (!areaEnvolvida) { mostrarToast('Selecione a Área Envolvida.', 'error'); return; }
+                if (!representante) { mostrarToast('Preencha o Representante / Reclamante.', 'error'); return; }
+
+                const resultado = construirRegistrosImport();
+                if (resultado.erro) { mostrarToast(resultado.erro, 'error'); return; }
+
+                const linhas = resultado.registros;
+                if (linhas.length === 0) { mostrarToast('Cole os dados primeiro.', 'error'); return; }
+
+                for (let i = 0; i < linhas.length; i++) {
+                    const l = linhas[i];
+                    if (!l.cliente) { mostrarToast(`Linha ${i+1}: preencha o Cliente.`, 'error'); return; }
+                    if (!l.causaResumida) { mostrarToast(`Linha ${i+1}: preencha a Causa Resumida.`, 'error'); return; }
+                    if (!l.causaCompleta) { mostrarToast(`Linha ${i+1}: preencha a Causa Completa.`, 'error'); return; }
+                }
+
+                const original = btnSalvarImport.innerHTML;
+                btnSalvarImport.disabled = true;
+                btnSalvarImport.innerHTML = '<span class="loading-indicator"></span> Salvando...';
+
+                const agora = new Date().toISOString();
+                let sucesso = 0;
+                try {
+                    for (const l of linhas) {
+                        const novoRegistro = {
+                            numRegistro: l.numRegistro,
+                            cliente: l.cliente,
+                            representanteCliente: representante,
+                            regiao: '',
+                            dataOcorrencia: dataOcorrencia,
+                            areaEnvolvida: areaEnvolvida,
+                            origem: origem,
+                            causaResumida: l.causaResumida,
+                            causaCompleta: l.causaCompleta,
+                            codItem: '',
+                            descricaoProduto: '',
+                            andamento: 'Abertura da RNC',
+                            solucaoProblema: '',
+                            valorNFD: null,
+                            atrasosDias: null,
+                            bonificacao: null,
+                            prorrogacao: null,
+                            reemissao: null,
+                            nfNfd: '',
+                            notaFiscal: l.notaFiscal,
+                            dataAbertura: agora,
+                            historicoEtapas: [{ etapa: 'Abertura da RNC', timestamp: agora }]
+                        };
+                        const docId = await salvarRegistroNoFirebase(novoRegistro);
+                        registros.push({ ...novoRegistro, docId });
+                        sucesso++;
+                    }
+
+                    registros.sort((a, b) => {
+                        const numA = parseInt(a.numRegistro) || 0;
+                        const numB = parseInt(b.numRegistro) || 0;
+                        return numB - numA;
+                    });
+
+                    atualizarStats();
+                    renderizarTabela();
+
+                    const dataHora = new Date().toLocaleString('pt-BR');
+                    const resumo = linhas.slice(0, 15).map(l => `• #${l.numRegistro} - ${l.cliente}`).join('\n');
+                    enviarWhatsApp(
+                        `⚡ *${sucesso} RECLAMAÇÕES IMPORTADAS EM MASSA*\n\n` +
+                        resumo + (linhas.length > 15 ? `\n... e mais ${linhas.length - 15}.` : '') + '\n' +
+                        `🏭 Área: ${areaEnvolvida}\n` +
+                        `📅 Data: ${formatarData(dataOcorrencia)}\n` +
+                        `👤 Por: ${currentUser.username}\n` +
+                        `🕒 ${dataHora}`
+                    );
+
+                    mostrarToast(`${sucesso} reclamação(ões) salva(s) com sucesso!`, 'success');
+                    fecharModalImport();
+                    limparFormulario();
+                } catch (err) {
+                    console.error('Erro ao salvar importação:', err);
+                    mostrarToast(`Erro ao salvar. ${sucesso} de ${linhas.length} salva(s).`, 'error');
+                } finally {
+                    btnSalvarImport.disabled = false;
+                    btnSalvarImport.innerHTML = original;
+                }
+            }
+
+            if (btnImportacaoRapida) btnImportacaoRapida.addEventListener('click', abrirModalImport);
+            if (modalImportClose) modalImportClose.addEventListener('click', fecharModalImport);
+            if (btnCancelImport) btnCancelImport.addEventListener('click', fecharModalImport);
+            if (btnPreviewImport) btnPreviewImport.addEventListener('click', previewImportacao);
+            if (btnSalvarImport) btnSalvarImport.addEventListener('click', salvarImportacao);
+
+            if (modalImportOverlay) {
+                modalImportOverlay.addEventListener('click', (e) => {
+                    if (e.target === modalImportOverlay) fecharModalImport();
                 });
             }
             // ========================================================
