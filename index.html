@@ -1454,6 +1454,9 @@
                                 <button type="submit" class="btn btn-success" id="btnSalvar">
                                     💾 Salvar Registro
                                 </button>
+                                <button type="button" class="btn btn-primary" id="btnAbrirLote">
+                                    📋 Abrir Várias Reclamações
+                                </button>
                                 <button type="button" class="btn btn-outline" id="btnLimpar">
                                     🧹 Limpar Formulário
                                 </button>
@@ -1748,6 +1751,28 @@
         </div>
     </div>
 
+    <!-- ========= MODAL DE REGISTRO EM LOTE (VÁRIAS RECLAMAÇÕES) ========= -->
+    <div class="modal-overlay" id="modalLoteOverlay">
+        <div class="modal" style="max-width: 1100px; width: 96%;">
+            <div class="modal-header">
+                <h3>📋 Abrir Várias Reclamações ao Mesmo Tempo</h3>
+                <button class="modal-close" id="modalLoteClose">&times;</button>
+            </div>
+            <div style="margin-bottom: 14px; padding: 12px 14px; background: #F3E5F5; border-left: 5px solid #7C3AED; border-radius: 10px; font-size: 0.82rem; color: #3C1053; font-weight: 600;">
+                ℹ️ Preencha cada bloco com uma reclamação. O <strong>Nº de Registro</strong> é gerado automaticamente (pode editar se quiser). Campos com <span style="color:#D32F2F; font-weight:800;">*</span> são obrigatórios.
+            </div>
+            <div id="loteRowsContainer" style="max-height: 55vh; overflow-y: auto; padding: 4px 6px;"></div>
+            <div class="btn-group" style="margin-top: 18px; justify-content: space-between; align-items: center;">
+                <button type="button" class="btn btn-outline" id="btnAddLoteRow">➕ Adicionar Linha</button>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-success" id="btnSalvarLote">💾 Salvar Todas</button>
+                    <button type="button" class="btn btn-outline" id="btnCancelarLote">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ================================================================ -->
+
     <div id="toastContainer"></div>
 
     <script>
@@ -1931,6 +1956,15 @@
             const userTipo = $('userTipo');
             const tabelaUsuarios = $('tabelaUsuarios');
             const tabBtnUsuarios = $('tabBtnUsuarios');
+
+            // ===== REFERÊNCIAS DO LOTE =====
+            const btnAbrirLote = $('btnAbrirLote');
+            const modalLoteOverlay = $('modalLoteOverlay');
+            const modalLoteClose = $('modalLoteClose');
+            const loteRowsContainer = $('loteRowsContainer');
+            const btnAddLoteRow = $('btnAddLoteRow');
+            const btnSalvarLote = $('btnSalvarLote');
+            const btnCancelarLote = $('btnCancelarLote');
 
             // ========================================================
             // PWA - BOTÃO DE INSTALAR APP
@@ -4656,6 +4690,227 @@
                     if (idx !== -1) excluirRegistro(idx);
                 }
             });
+
+            // ========================================================
+            // LOTE - ABRIR VÁRIAS RECLAMAÇÕES AO MESMO TEMPO
+            // ========================================================
+            const LOTE_AREAS = ['Produção','Qualidade','Transporte','Expedição','Comercial','Compras','Manutenção','Administrativo','Outro'];
+
+            function proximoNumeroParaLote() {
+                let maxNum = 0;
+                registros.forEach(r => {
+                    const raw = String(r.numRegistro || '').trim();
+                    const n = parseInt(raw.replace(/[^\d]/g, ''), 10);
+                    if (!isNaN(n) && n > maxNum) maxNum = n;
+                });
+                const linhasExistentes = loteRowsContainer ? loteRowsContainer.querySelectorAll('.lote-row').length : 0;
+                return maxNum + 1 + linhasExistentes;
+            }
+
+            function criarLinhaLote(numero) {
+                const div = document.createElement('div');
+                div.className = 'lote-row';
+                div.style.cssText = 'background:#FAFAFE;border:1.5px solid #C5CAE9;border-radius:12px;padding:14px;margin-bottom:12px;';
+
+                const optionsArea = LOTE_AREAS.map(a => `<option value="${a}">${a}</option>`).join('');
+                const hoje = new Date().toISOString().split('T')[0];
+
+                div.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <span style="font-weight:800;color:#3C1053;font-size:0.85rem;">📝 Reclamação</span>
+                        <button type="button" class="btn btn-danger btn-sm" data-remove-lote>🗑️ Remover</button>
+                    </div>
+                    <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;">
+                        <div class="form-group">
+                            <label class="form-label">Nº Registro <span class="required">*</span></label>
+                            <input type="text" class="form-input lote-num" value="${numero}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cliente <span class="required">*</span></label>
+                            <input type="text" class="form-input lote-cliente" placeholder="Nome do cliente">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Representante <span class="required">*</span></label>
+                            <input type="text" class="form-input lote-representante" placeholder="Quem reclamou">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Região</label>
+                            <input type="text" class="form-input lote-regiao" placeholder="Ex: Sudeste">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Data da Ocorrência <span class="required">*</span></label>
+                            <input type="date" class="form-input lote-data" value="${hoje}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Área Envolvida <span class="required">*</span></label>
+                            <select class="form-select lote-area">
+                                <option value="">Selecione...</option>
+                                ${optionsArea}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Origem</label>
+                            <select class="form-select lote-origem">
+                                <option value="Interno" selected>🏭 Interno</option>
+                                <option value="Externo">🌐 Externo</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">Causa Resumida <span class="required">*</span></label>
+                            <input type="text" class="form-input lote-causa-resumida" placeholder="Resumo da causa">
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">Causa do Problema (Completo) <span class="required">*</span></label>
+                            <textarea class="form-textarea lote-causa-completa" placeholder="Descrição detalhada..." rows="2"></textarea>
+                        </div>
+                    </div>
+                `;
+                return div;
+            }
+
+            function abrirModalLote() {
+                if (!isAdmin()) {
+                    mostrarToast('Apenas administradores podem abrir reclamações.', 'error');
+                    return;
+                }
+                loteRowsContainer.innerHTML = '';
+                const numero = proximoNumeroParaLote();
+                loteRowsContainer.appendChild(criarLinhaLote(numero));
+                modalLoteOverlay.classList.add('active');
+            }
+
+            function fecharModalLote() {
+                modalLoteOverlay.classList.remove('active');
+                loteRowsContainer.innerHTML = '';
+            }
+
+            function adicionarLinhaLote() {
+                const numero = proximoNumeroParaLote();
+                loteRowsContainer.appendChild(criarLinhaLote(numero));
+                loteRowsContainer.scrollTop = loteRowsContainer.scrollHeight;
+            }
+
+            async function salvarLote() {
+                if (!isAdmin()) {
+                    mostrarToast('Apenas administradores podem salvar registros.', 'error');
+                    return;
+                }
+
+                const rows = loteRowsContainer.querySelectorAll('.lote-row');
+                if (rows.length === 0) {
+                    mostrarToast('Adicione ao menos uma reclamação.', 'error');
+                    return;
+                }
+
+                const dadosLote = [];
+                for (const row of rows) {
+                    const dados = {
+                        numRegistro: row.querySelector('.lote-num').value.trim(),
+                        cliente: row.querySelector('.lote-cliente').value.trim(),
+                        representanteCliente: row.querySelector('.lote-representante').value.trim(),
+                        regiao: row.querySelector('.lote-regiao').value.trim(),
+                        dataOcorrencia: row.querySelector('.lote-data').value,
+                        areaEnvolvida: row.querySelector('.lote-area').value,
+                        origem: row.querySelector('.lote-origem').value,
+                        causaResumida: row.querySelector('.lote-causa-resumida').value.trim(),
+                        causaCompleta: row.querySelector('.lote-causa-completa').value.trim(),
+                        andamento: 'Abertura da RNC',
+                        solucaoProblema: '',
+                        valorNFD: null,
+                        atrasosDias: null,
+                        bonificacao: null,
+                        prorrogacao: null,
+                        reemissao: null,
+                        nfNfd: '',
+                        notaFiscal: '',
+                        codItem: '',
+                        descricaoProduto: ''
+                    };
+
+                    if (!dados.numRegistro || !dados.cliente || !dados.representanteCliente ||
+                        !dados.dataOcorrencia || !dados.areaEnvolvida ||
+                        !dados.causaResumida || !dados.causaCompleta) {
+                        mostrarToast(`Preencha todos os campos obrigatórios (linha do cliente "${dados.cliente || 'sem nome'}").`, 'error');
+                        return;
+                    }
+                    dadosLote.push(dados);
+                }
+
+                const originalText = btnSalvarLote.innerHTML;
+                btnSalvarLote.disabled = true;
+                btnSalvarLote.innerHTML = '<span class="loading-indicator"></span> Salvando...';
+
+                let sucesso = 0;
+                try {
+                    const agora = new Date().toISOString();
+                    for (const dados of dadosLote) {
+                        const novoRegistro = {
+                            ...dados,
+                            dataAbertura: agora,
+                            historicoEtapas: [{ etapa: dados.andamento, timestamp: agora }]
+                        };
+                        const novoDocId = await salvarRegistroNoFirebase(novoRegistro);
+                        registros.push({ ...novoRegistro, docId: novoDocId });
+                        sucesso++;
+                    }
+
+                    registros.sort((a, b) => {
+                        const numA = parseInt(a.numRegistro) || 0;
+                        const numB = parseInt(b.numRegistro) || 0;
+                        return numB - numA;
+                    });
+
+                    atualizarStats();
+                    renderizarTabela();
+
+                    const dataHora = new Date().toLocaleString('pt-BR');
+                    const resumo = dadosLote.map(d => `• #${d.numRegistro} - ${d.cliente} (${d.areaEnvolvida})`).join('\n');
+                    enviarWhatsApp(
+                        `🚨 *${sucesso} NOVAS RECLAMAÇÕES (EM LOTE)*\n\n` +
+                        resumo + '\n' +
+                        `👤 Por: ${currentUser.username}\n` +
+                        `🕒 ${dataHora}`
+                    );
+
+                    mostrarToast(`${sucesso} reclamação(ões) salva(s) com sucesso!`, 'success');
+                    fecharModalLote();
+                    limparFormulario();
+                } catch (err) {
+                    console.error('Erro ao salvar lote:', err);
+                    mostrarToast(`Erro ao salvar. ${sucesso} de ${dadosLote.length} salva(s).`, 'error');
+                } finally {
+                    btnSalvarLote.disabled = false;
+                    btnSalvarLote.innerHTML = originalText;
+                }
+            }
+
+            if (btnAbrirLote) btnAbrirLote.addEventListener('click', abrirModalLote);
+            if (modalLoteClose) modalLoteClose.addEventListener('click', fecharModalLote);
+            if (btnCancelarLote) btnCancelarLote.addEventListener('click', fecharModalLote);
+            if (btnAddLoteRow) btnAddLoteRow.addEventListener('click', adicionarLinhaLote);
+            if (btnSalvarLote) btnSalvarLote.addEventListener('click', salvarLote);
+
+            if (loteRowsContainer) {
+                loteRowsContainer.addEventListener('click', (e) => {
+                    const btn = e.target.closest('button[data-remove-lote]');
+                    if (!btn) return;
+                    const row = btn.closest('.lote-row');
+                    if (!row) return;
+                    const total = loteRowsContainer.querySelectorAll('.lote-row').length;
+                    if (total <= 1) {
+                        mostrarToast('Deve haver ao menos uma linha.', 'warning');
+                        return;
+                    }
+                    row.remove();
+                });
+            }
+
+            if (modalLoteOverlay) {
+                modalLoteOverlay.addEventListener('click', (e) => {
+                    if (e.target === modalLoteOverlay) fecharModalLote();
+                });
+            }
+            // ========================================================
 
             async function iniciar() {
                 mostrarLoadingGlobal(true, 'Carregando dados do Firebase...');
