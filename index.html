@@ -20,6 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
@@ -530,6 +531,15 @@
         .btn-pdf:hover {
             transform: translateY(-2px);
             box-shadow: 0 12px 35px rgba(124, 58, 237, 0.65);
+        }
+        .btn-excel {
+            background: linear-gradient(135deg, #00875A 0%, #00B37E 100%);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(0, 135, 90, 0.45);
+        }
+        .btn-excel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(0, 135, 90, 0.65);
         }
         .btn-sm { padding: 7px 13px; font-size: 0.75rem; border-radius: 7px; }
         .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
@@ -1352,6 +1362,16 @@
                         </div>
 
                         <div class="form-group">
+                            <label class="form-label">Turno</label>
+                            <select class="form-select" id="turno">
+                                <option value="">Selecione...</option>
+                                <option value="1º Turno">1º Turno</option>
+                                <option value="2º Turno">2º Turno</option>
+                                <option value="3º Turno">3º Turno</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
                             <label class="form-label">Área Envolvida <span class="required">*</span></label>
                             <select class="form-select" id="areaEnvolvida" required>
                                 <option value="">Selecione...</option>
@@ -1495,6 +1515,9 @@
                     <button class="btn btn-pdf btn-sm" id="btnGerarPDFHistorico" style="margin-bottom: 2px;">
                         📄 Gerar PDF
                     </button>
+                    <button class="btn btn-excel btn-sm" id="btnGerarExcelHistorico" style="margin-bottom: 2px;">
+                        📊 Gerar Excel
+                    </button>
                 </div>
 
                 <div class="table-wrapper" id="tableWrapper">
@@ -1503,6 +1526,7 @@
                             <tr>
                                 <th>Nº Registro</th>
                                 <th>Data</th>
+                                <th>Turno</th>
                                 <th>Cliente</th>
                                 <th>Representante</th>
                                 <th>Região</th>
@@ -1655,6 +1679,10 @@
                     <div class="chart-container">
                         <h3>Reclamações por Região</h3>
                         <canvas id="graficoRegiao"></canvas>
+                    </div>
+                    <div class="chart-container chart-container-produtos">
+                        <h3>Clientes que Reclamaram (Top 20)</h3>
+                        <canvas id="graficoClientes"></canvas>
                     </div>
                     <div class="chart-container chart-container-produtos">
                         <h3>Quantidade Reclamada por Produto</h3>
@@ -1953,6 +1981,7 @@
             let chartNfNfdArea = null;
             let chartVendasReclamacoes = null;
             let chartRegiao = null;
+            let chartClientes = null;
             let vendasMesTributada = null;
 
             const $ = (id) => document.getElementById(id);
@@ -1963,6 +1992,7 @@
             const representanteClienteInput = $('representanteCliente');
             const regiaoInput = $('regiao');
             const dataOcorrenciaInput = $('dataOcorrencia');
+            const turnoInput = $('turno');
             const areaEnvolvidaInput = $('areaEnvolvida');
             const origemRadios = document.querySelectorAll('input[name="origem"]');
             const causaResumidaInput = $('causaResumida');
@@ -1983,6 +2013,7 @@
             const btnLimpar = $('btnLimpar');
             const btnLimparFiltros = $('btnLimparFiltros');
             const btnGerarPDFHistorico = $('btnGerarPDFHistorico');
+            const btnGerarExcelHistorico = $('btnGerarExcelHistorico');
 
             const filtroData = $('filtroData');
             const filtroMes = $('filtroMes');
@@ -2028,6 +2059,7 @@
             const canvasNfNfdArea = $('graficoNfNfdArea');
             const canvasVendasReclamacoes = $('graficoVendasReclamacoes');
             const canvasRegiao = $('graficoRegiao');
+            const canvasClientes = $('graficoClientes');
             const listaAtrasosProrrogacao = $('listaAtrasosProrrogacao');
             const listaAtrasosPorCliente = $('listaAtrasosPorCliente');
             const mediaAtrasosProrrogacao = $('mediaAtrasosProrrogacao');
@@ -2392,6 +2424,9 @@
                 if (btnGerarPDFHistorico) {
                     btnGerarPDFHistorico.style.display = adm ? '' : 'none';
                 }
+                if (btnGerarExcelHistorico) {
+                    btnGerarExcelHistorico.style.display = adm ? '' : 'none';
+                }
 
                 if (userInfo) {
                     userInfo.innerHTML = `
@@ -2482,6 +2517,7 @@
                 });
                 if (btnGerarPDF) btnGerarPDF.style.display = '';
                 if (btnGerarPDFHistorico) btnGerarPDFHistorico.style.display = '';
+                if (btnGerarExcelHistorico) btnGerarExcelHistorico.style.display = '';
                 alternarAba('registro');
 
                 const agora = new Date().toLocaleString('pt-BR');
@@ -2774,6 +2810,7 @@
                     if (data.regiao === undefined) data.regiao = '';
                     if (data.notaFiscal === undefined) data.notaFiscal = '';
                     if (data.representanteCliente === undefined) data.representanteCliente = '';
+                    if (data.turno === undefined) data.turno = '';
                     registros.push(data);
                 });
 
@@ -2879,6 +2916,7 @@
                 dataOcorrenciaInput.value = new Date().toISOString().split('T')[0];
                 setOrigemSelecionada('Interno');
                 popularSelectAndamento(false);
+                turnoInput.value = '';
                 valorNFDInput.value = '';
                 atrasosDiasInput.value = '';
                 bonificacaoInput.value = '';
@@ -2929,6 +2967,7 @@
                     representanteCliente: representanteClienteInput.value.trim(),
                     regiao: regiaoInput.value.trim(),
                     dataOcorrencia: dataOcorrenciaInput.value,
+                    turno: turnoInput.value,
                     areaEnvolvida: areaEnvolvidaInput.value,
                     origem: getOrigemSelecionada(),
                     causaResumida: causaResumidaInput.value.trim(),
@@ -3051,6 +3090,7 @@
                             `👤 Cliente: ${dados.cliente}\n` +
                             `👤 Representante: ${dados.representanteCliente}\n` +
                             `📅 Data: ${formatarData(dados.dataOcorrencia)}\n` +
+                            (dados.turno ? `🕐 Turno: ${dados.turno}\n` : '') +
                             `🏭 Área: ${dados.areaEnvolvida}\n` +
                             `🔍 Origem: ${dados.origem}\n` +
                             `📌 Causa: ${dados.causaResumida}\n` +
@@ -3141,6 +3181,7 @@
                 representanteClienteInput.value = registro.representanteCliente || '';
                 regiaoInput.value = registro.regiao || '';
                 dataOcorrenciaInput.value = registro.dataOcorrencia || '';
+                turnoInput.value = registro.turno || '';
                 areaEnvolvidaInput.value = normalizarArea(registro.areaEnvolvida) || '';
                 setOrigemSelecionada(registro.origem || 'Interno');
                 causaResumidaInput.value = registro.causaResumida || '';
@@ -3223,6 +3264,7 @@
                     <div class="modal-detail-item"><div class="label">Representante / Reclamante</div><div class="value">${registro.representanteCliente || '-'}</div></div>
                     <div class="modal-detail-item"><div class="label">Região</div><div class="value">${registro.regiao || '-'}</div></div>
                     <div class="modal-detail-item"><div class="label">Data da Ocorrência</div><div class="value">${formatarData(registro.dataOcorrencia)}</div></div>
+                    <div class="modal-detail-item"><div class="label">Turno</div><div class="value">${registro.turno || '-'}</div></div>
                     <div class="modal-detail-item"><div class="label">Área Envolvida</div><div class="value">${normalizarArea(registro.areaEnvolvida) || '-'}</div></div>
                     <div class="modal-detail-item"><div class="label">Origem</div><div class="value">${registro.origem === 'Interno' ? '🏭 Interno' : '🌐 Externo'}</div></div>
                     <div class="modal-detail-item"><div class="label">Andamento</div><div class="value"><span class="badge ${badgeClass}">${statusIcon} ${registro.andamento}</span></div></div>
@@ -3325,6 +3367,7 @@
                             ${badgeAlertaHTML}
                         </td>
                         <td>${formatarData(r.dataOcorrencia)}</td>
+                        <td>${r.turno || '-'}</td>
                         <td>${r.cliente || '-'}</td>
                         <td>${r.representanteCliente || '-'}</td>
                         <td>${r.regiao || '-'}</td>
@@ -3396,6 +3439,7 @@
                 if (chartNfNfdArea) { chartNfNfdArea.destroy(); chartNfNfdArea = null; }
                 if (chartVendasReclamacoes) { chartVendasReclamacoes.destroy(); chartVendasReclamacoes = null; }
                 if (chartRegiao) { chartRegiao.destroy(); chartRegiao = null; }
+                if (chartClientes) { chartClientes.destroy(); chartClientes = null; }
             }
 
             function abreviarValor(v) {
@@ -3781,6 +3825,63 @@
                     ctx.font = 'bold 13px Segoe UI, sans-serif';
                     ctx.textAlign = 'center';
                     ctx.fillText('Sem dados de região nos filtros selecionados', canvasRegiao.width / 2, canvasRegiao.height / 2);
+                }
+
+                const clienteMap = new Map();
+                dados.forEach(r => {
+                    const cli = r.cliente || 'Não informado';
+                    clienteMap.set(cli, (clienteMap.get(cli) || 0) + 1);
+                });
+                const clienteEntries = Array.from(clienteMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 20);
+                const clienteLabels = clienteEntries.map(e => e[0]);
+                const clienteValores = clienteEntries.map(e => e[1]);
+                if (clienteLabels.length > 0) {
+                    chartClientes = new Chart(canvasClientes.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: clienteLabels,
+                            datasets: [{
+                                label: 'Qtd. Reclamações',
+                                data: clienteValores,
+                                backgroundColor: '#00897B',
+                                borderColor: '#00695C',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: false,
+                            layout: { padding: { top: 10, right: 14, left: 10, bottom: 10 } },
+                            plugins: {
+                                legend: { display: false },
+                                datalabels: {
+                                    anchor: 'end',
+                                    align: 'end',
+                                    offset: 4,
+                                    clamp: false,
+                                    color: '#00897B',
+                                    font: { weight: 'bold', size: 11 },
+                                    backgroundColor: 'rgba(255,255,255,0.9)',
+                                    borderRadius: 4,
+                                    padding: { top: 3, bottom: 3, left: 5, right: 5 },
+                                    formatter: (v) => v
+                                }
+                            },
+                            scales: {
+                                x: { beginAtZero: true, ticks: { precision: 0 }, grace: '15%' }
+                            }
+                        }
+                    });
+                } else {
+                    const ctx = canvasClientes.getContext('2d');
+                    ctx.clearRect(0, 0, canvasClientes.width, canvasClientes.height);
+                    ctx.fillStyle = '#5C5C8A';
+                    ctx.font = 'bold 13px Segoe UI, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Sem dados de clientes nos filtros selecionados', canvasClientes.width / 2, canvasClientes.height / 2);
                 }
 
                 const nfNfdPorArea = new Map();
@@ -4675,6 +4776,387 @@
                 }
             }
 
+            function colName(n) {
+                let s = '';
+                while (n > 0) {
+                    n--;
+                    s = String.fromCharCode(65 + (n % 26)) + s;
+                    n = Math.floor(n / 26);
+                }
+                return s;
+            }
+
+            function renderChartToBase64(opts) {
+                return new Promise((resolve) => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = opts.width || 700;
+                        canvas.height = opts.height || 380;
+                        canvas.style.position = 'fixed';
+                        canvas.style.left = '-99999px';
+                        canvas.style.top = '0';
+                        document.body.appendChild(canvas);
+                        const chart = new Chart(canvas.getContext('2d'), opts.config);
+                        setTimeout(() => {
+                            try {
+                                const dataUrl = canvas.toDataURL('image/png');
+                                const base64 = dataUrl.substring(dataUrl.indexOf(',') + 1);
+                                chart.destroy();
+                                canvas.remove();
+                                resolve(base64);
+                            } catch (err) {
+                                chart.destroy();
+                                canvas.remove();
+                                resolve(null);
+                            }
+                        }, 250);
+                    } catch (err) {
+                        resolve(null);
+                    }
+                });
+            }
+
+            function adicionarImagemWS(ws, wb, base64, col, row, w, h) {
+                if (!base64) return;
+                try {
+                    const imgId = wb.addImage({ base64: base64, extension: 'png' });
+                    ws.addImage(imgId, { tl: { col: col, row: row }, ext: { width: w, height: h } });
+                } catch (e) { /* ignora */ }
+            }
+
+            async function gerarExcelHistorico() {
+                if (!isAdmin()) {
+                    mostrarToast('Apenas administradores podem gerar Excel.', 'error');
+                    return;
+                }
+
+                const ExcelJS = window.ExcelJS;
+                if (!ExcelJS) {
+                    mostrarToast('A biblioteca de Excel não foi carregada. Verifique a conexão.', 'error');
+                    return;
+                }
+
+                const originalText = btnGerarExcelHistorico.innerHTML;
+                btnGerarExcelHistorico.disabled = true;
+                btnGerarExcelHistorico.innerHTML = '<span class="loading-indicator"></span> Gerando Excel...';
+
+                try {
+                    const dataFiltro = filtroData.value;
+                    const mesFiltro = filtroMes.value;
+                    const busca = filtroBusca.value.toLowerCase().trim();
+
+                    const filtrados = registros.filter(r => {
+                        if (dataFiltro && r.dataOcorrencia !== dataFiltro) return false;
+                        if (mesFiltro && !String(r.dataOcorrencia || '').startsWith(mesFiltro)) return false;
+                        if (busca) {
+                            const campos = [
+                                r.numRegistro, r.cliente, r.representanteCliente, r.regiao, r.causaResumida, r.causaCompleta,
+                                r.codItem, r.descricaoProduto, normalizarArea(r.areaEnvolvida), r.andamento,
+                                r.nfNfd, r.notaFiscal
+                            ].join(' ').toLowerCase();
+                            if (!campos.includes(busca)) return false;
+                        }
+                        return true;
+                    });
+
+                    if (filtrados.length === 0) {
+                        mostrarToast('Nenhum registro encontrado com os filtros aplicados.', 'warning');
+                        return;
+                    }
+
+                    let filtroTexto = 'Todos os registros';
+                    const partes = [];
+                    if (dataFiltro) partes.push(`Dia: ${formatarData(dataFiltro)}`);
+                    if (mesFiltro) {
+                        const [ano, mes] = mesFiltro.split('-');
+                        const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                                       'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+                        partes.push(`Mês: ${meses[parseInt(mes, 10) - 1]}/${ano}`);
+                    }
+                    if (busca) partes.push(`Busca: "${busca}"`);
+                    if (partes.length > 0) filtroTexto = partes.join(' · ');
+
+                    const agora = new Date();
+                    const dataGeracao = agora.toLocaleDateString('pt-BR') + ' às ' +
+                        agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+                    let totPend = 0, totConc = 0, totAtraso = 0, totQtd = 0, totBonif = 0, totNf = 0;
+                    filtrados.forEach(r => {
+                        if (r.andamento === 'Concluído') totConc++;
+                        else { totPend++; if (isAlertaPrazo(r)) totAtraso++; }
+                        totQtd += parseFloat(r.valorNFD) || 0;
+                        totBonif += parseFloat(r.bonificacao) || 0;
+                        const v = parseValorBR(r.nfNfd); if (v !== null) totNf += v;
+                    });
+
+                    const wb = new ExcelJS.Workbook();
+                    wb.creator = 'DONA RITA EMBALAGENS - SAC';
+                    wb.created = agora;
+
+                    // ===== Aba 1: Reclamações =====
+                    const ws = wb.addWorksheet('Reclamações', {
+                        views: [{ state: 'frozen', ySplit: 1 }]
+                    });
+
+                    ws.columns = [
+                        { header: 'Nº Registro', key: 'numRegistro', width: 12 },
+                        { header: 'Data', key: 'dataOcorrencia', width: 12 },
+                        { header: 'Turno', key: 'turno', width: 10 },
+                        { header: 'Cliente', key: 'cliente', width: 28 },
+                        { header: 'Representante', key: 'representanteCliente', width: 20 },
+                        { header: 'Região', key: 'regiao', width: 14 },
+                        { header: 'Área', key: 'areaEnvolvida', width: 15 },
+                        { header: 'Origem', key: 'origem', width: 10 },
+                        { header: 'Causa Resumida', key: 'causaResumida', width: 28 },
+                        { header: 'Causa Completa', key: 'causaCompleta', width: 34 },
+                        { header: 'Cód. Item', key: 'codItem', width: 10 },
+                        { header: 'Descrição Produto', key: 'descricaoProduto', width: 22 },
+                        { header: 'Qtd. Reclamada', key: 'valorNFD', width: 14 },
+                        { header: 'Atrasos/Dias', key: 'atrasosDias', width: 12 },
+                        { header: 'Nf/Nfd', key: 'nfNfd', width: 14 },
+                        { header: 'Nota Fiscal', key: 'notaFiscal', width: 12 },
+                        { header: 'Bonificação (R$)', key: 'bonificacao', width: 15 },
+                        { header: 'Prorrogação', key: 'prorrogacao', width: 12 },
+                        { header: 'Reemissão', key: 'reemissao', width: 10 },
+                        { header: 'Andamento', key: 'andamento', width: 22 },
+                        { header: 'Solução', key: 'solucaoProblema', width: 30 }
+                    ];
+
+                    const headerRow = ws.getRow(1);
+                    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+                    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3C1053' } };
+                    headerRow.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                    headerRow.height = 30;
+
+                    ws.getColumn('valorNFD').numFmt = '#,##0';
+                    ws.getColumn('atrasosDias').numFmt = '#,##0';
+                    ws.getColumn('bonificacao').numFmt = '#,##0.00';
+                    ws.getColumn('prorrogacao').numFmt = '#,##0';
+                    ws.getColumn('reemissao').numFmt = '#,##0';
+
+                    const thinBorder = {
+                        top: { style: 'thin', color: { argb: 'FFE8EAF6' } },
+                        left: { style: 'thin', color: { argb: 'FFE8EAF6' } },
+                        bottom: { style: 'thin', color: { argb: 'FFE8EAF6' } },
+                        right: { style: 'thin', color: { argb: 'FFE8EAF6' } }
+                    };
+
+                    filtrados.forEach((r) => {
+                        const row = ws.addRow({
+                            numRegistro: r.numRegistro || '',
+                            dataOcorrencia: formatarData(r.dataOcorrencia),
+                            turno: r.turno || '',
+                            cliente: r.cliente || '',
+                            representanteCliente: r.representanteCliente || '',
+                            regiao: r.regiao || '',
+                            areaEnvolvida: normalizarArea(r.areaEnvolvida) || '',
+                            origem: (r.origem === 'Interno') ? 'Interno' : 'Externo',
+                            causaResumida: r.causaResumida || '',
+                            causaCompleta: r.causaCompleta || '',
+                            codItem: r.codItem || '',
+                            descricaoProduto: r.descricaoProduto || '',
+                            valorNFD: (r.valorNFD !== null && r.valorNFD !== undefined) ? Number(r.valorNFD) : null,
+                            atrasosDias: (r.atrasosDias !== null && r.atrasosDias !== undefined) ? Number(r.atrasosDias) : null,
+                            nfNfd: r.nfNfd || '',
+                            notaFiscal: r.notaFiscal || '',
+                            bonificacao: (r.bonificacao !== null && r.bonificacao !== undefined) ? Number(r.bonificacao) : null,
+                            prorrogacao: (r.prorrogacao !== null && r.prorrogacao !== undefined) ? Number(r.prorrogacao) : null,
+                            reemissao: (r.reemissao !== null && r.reemissao !== undefined) ? Number(r.reemissao) : null,
+                            andamento: r.andamento || '',
+                            solucaoProblema: r.solucaoProblema || ''
+                        });
+                        row.alignment = { vertical: 'middle', wrapText: true };
+                        row.border = thinBorder;
+                        if (isAlertaPrazo(r)) {
+                            row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFEBEE' } };
+                            row.font = { color: { argb: 'FFC62828' } };
+                        }
+                    });
+
+                    const lastDataRow = filtrados.length + 1;
+                    ws.autoFilter = { from: 'A1', to: 'U' + lastDataRow };
+
+                    const footRowNum = lastDataRow + 1;
+                    const foot = ws.getRow(footRowNum);
+                    foot.getCell(1).value = 'TOTAL';
+                    foot.getCell(13).value = { formula: `SUM(M2:M${lastDataRow})`, result: totQtd };
+                    foot.getCell(14).value = { formula: `SUM(N2:N${lastDataRow})` };
+                    foot.getCell(17).value = { formula: `SUM(Q2:Q${lastDataRow})`, result: totBonif };
+                    foot.getCell(13).numFmt = '#,##0';
+                    foot.getCell(14).numFmt = '#,##0';
+                    foot.getCell(17).numFmt = '#,##0.00';
+                    foot.font = { bold: true, color: { argb: 'FF3C1053' } };
+                    foot.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3E5F5' } };
+                    foot.eachCell((cell) => {
+                        cell.border = { bottom: { style: 'medium', color: { argb: 'FFB39DDB' } } };
+                    });
+
+                    // ===== Agregações para resumo e gráficos =====
+                    const areaMap = new Map();
+                    const clienteMap = new Map();
+                    const origemMap = new Map();
+                    const bonifClienteMap = new Map();
+                    filtrados.forEach(r => {
+                        const area = normalizarArea(r.areaEnvolvida) || 'Não informada';
+                        areaMap.set(area, (areaMap.get(area) || 0) + 1);
+                        const cli = r.cliente || 'Não informado';
+                        clienteMap.set(cli, (clienteMap.get(cli) || 0) + 1);
+                        const orig = (r.origem === 'Interno') ? 'Interno' : 'Externo';
+                        origemMap.set(orig, (origemMap.get(orig) || 0) + 1);
+                        const bonif = parseFloat(r.bonificacao) || 0;
+                        bonifClienteMap.set(cli, (bonifClienteMap.get(cli) || 0) + bonif);
+                    });
+
+                    const areaLabels = Array.from(areaMap.keys());
+                    const areaValores = Array.from(areaMap.values());
+
+                    const clienteEntries2 = Array.from(clienteMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 15);
+                    const clienteLabelsX = clienteEntries2.map(e => e[0]);
+                    const clienteValoresX = clienteEntries2.map(e => e[1]);
+
+                    const origemLabels = Array.from(origemMap.keys());
+                    const origemValores = Array.from(origemMap.values());
+
+                    const bonifEntries = Array.from(bonifClienteMap.entries()).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 15);
+                    const bonifLabels = bonifEntries.map(e => e[0]);
+                    const bonifValores = bonifEntries.map(e => e[1]);
+
+                    const cfgArea = {
+                        type: 'bar',
+                        data: { labels: areaLabels, datasets: [{ label: 'Reclamações', data: areaValores, backgroundColor: '#7C3AED', borderColor: '#5B2A86', borderWidth: 1, borderRadius: 6 }] },
+                        options: {
+                            responsive: false, animation: false, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                title: { display: true, text: 'Reclamações por Área', color: '#3C1053', font: { size: 16, weight: 'bold' } },
+                                datalabels: { anchor: 'end', align: 'end', color: '#3C1053', font: { weight: 'bold', size: 12 }, formatter: (v) => v }
+                            },
+                            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                        }
+                    };
+
+                    const cfgClientes = {
+                        type: 'bar',
+                        data: { labels: clienteLabelsX, datasets: [{ label: 'Reclamações', data: clienteValoresX, backgroundColor: '#A78BFA', borderColor: '#5B2A86', borderWidth: 1, borderRadius: 4 }] },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: false, animation: false, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                title: { display: true, text: 'Clientes que Reclamaram', color: '#3C1053', font: { size: 16, weight: 'bold' } },
+                                datalabels: { anchor: 'end', align: 'end', color: '#3C1053', font: { weight: 'bold', size: 11 }, formatter: (v) => v }
+                            },
+                            scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+                        }
+                    };
+
+                    const cfgOrigem = {
+                        type: 'doughnut',
+                        data: { labels: origemLabels, datasets: [{ label: 'Ocorrências', data: origemValores, backgroundColor: ['#3C1053', '#F57C00'], borderWidth: 2 }] },
+                        options: {
+                            responsive: false, animation: false, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom' },
+                                title: { display: true, text: 'Origem das Reclamações', color: '#3C1053', font: { size: 16, weight: 'bold' } },
+                                datalabels: { color: '#fff', font: { weight: 'bold', size: 14 }, formatter: (v) => v, anchor: 'center', align: 'center' }
+                            }
+                        }
+                    };
+
+                    const cfgBonif = {
+                        type: 'bar',
+                        data: { labels: bonifLabels, datasets: [{ label: 'Bonificação (R$)', data: bonifValores, backgroundColor: '#00897B', borderColor: '#00695C', borderWidth: 1, borderRadius: 4 }] },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: false, animation: false, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                title: { display: true, text: 'Bonificação por Cliente (R$)', color: '#3C1053', font: { size: 16, weight: 'bold' } },
+                                datalabels: { anchor: 'end', align: 'end', color: '#00897B', font: { weight: 'bold', size: 11 }, formatter: (v) => 'R$ ' + v.toFixed(2) }
+                            },
+                            scales: { x: { beginAtZero: true } }
+                        }
+                    };
+
+                    const b64Area = areaLabels.length ? await renderChartToBase64({ width: 700, height: 380, config: cfgArea }) : null;
+                    const b64Clientes = clienteLabelsX.length ? await renderChartToBase64({ width: 700, height: 380, config: cfgClientes }) : null;
+                    const b64Origem = origemLabels.length ? await renderChartToBase64({ width: 560, height: 380, config: cfgOrigem }) : null;
+                    const b64Bonif = bonifLabels.length ? await renderChartToBase64({ width: 700, height: 380, config: cfgBonif }) : null;
+
+                    // ===== Aba 2: Resumo =====
+                    const wsR = wb.addWorksheet('Resumo');
+                    wsR.columns = Array.from({ length: 12 }, () => ({ width: 17 }));
+
+                    wsR.mergeCells('A1:L1');
+                    const t1 = wsR.getCell('A1');
+                    t1.value = 'DONA RITA EMBALAGENS — RELATÓRIO SAC';
+                    t1.font = { size: 20, bold: true, color: { argb: 'FF3C1053' } };
+                    t1.alignment = { horizontal: 'center', vertical: 'middle' };
+                    wsR.getRow(1).height = 30;
+
+                    wsR.mergeCells('A2:L2');
+                    const t2 = wsR.getCell('A2');
+                    t2.value = 'Resumo Executivo · ' + filtroTexto + ' · Gerado em ' + dataGeracao;
+                    t2.font = { size: 11, italic: true, color: { argb: 'FF5C5C8A' } };
+                    t2.alignment = { horizontal: 'center', vertical: 'middle' };
+
+                    const kpis = [
+                        { label: 'Total de Reclamações', valor: filtrados.length, cor: 'FF3C1053' },
+                        { label: 'Pendentes', valor: totPend, cor: 'FFE65100' },
+                        { label: 'Concluídos', valor: totConc, cor: 'FF388E3C' },
+                        { label: 'Em Atraso', valor: totAtraso, cor: 'FFD32F2F' },
+                        { label: 'Qtd. Reclamada', valor: totQtd, cor: 'FF7C3AED' },
+                        { label: 'Bonificação (R$)', valor: totBonif, cor: 'FF1A0033', money: true },
+                        { label: 'Nf / Nfd (R$)', valor: totNf, cor: 'FF00897B', money: true }
+                    ];
+
+                    kpis.forEach((k, i) => {
+                        if (i > 6) return;
+                        const col = i + 1;
+                        const cell = wsR.getCell(4, col);
+                        const strValor = k.money ? ('R$ ' + k.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : String(k.valor);
+                        cell.value = strValor;
+                        cell.font = { size: 15, bold: true, color: { argb: 'FFFFFFFF' } };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: k.cor } };
+                        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
+                        const labelCell = wsR.getCell(5, col);
+                        labelCell.value = k.label;
+                        labelCell.font = { size: 8, bold: true, color: { argb: 'FF3C1053' } };
+                        labelCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                    });
+                    wsR.getRow(4).height = 46;
+                    wsR.getRow(5).height = 30;
+
+                    let rIdx = 8;
+                    adicionarImagemWS(wsR, wb, b64Area, 0.5, rIdx, 520, 300);
+                    adicionarImagemWS(wsR, wb, b64Clientes, 9.5, rIdx, 520, 300);
+                    rIdx += 17;
+                    adicionarImagemWS(wsR, wb, b64Origem, 0.5, rIdx, 440, 300);
+                    adicionarImagemWS(wsR, wb, b64Bonif, 9.5, rIdx, 520, 300);
+
+                    const buffer = await wb.xlsx.writeBuffer();
+                    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    const sufixo = dataFiltro || mesFiltro || 'Completo';
+                    a.download = `Historico_SAC_${sufixo}_${agora.toISOString().split('T')[0]}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    mostrarToast(`Excel gerado com sucesso (${filtrados.length} registro(s))!`, 'success');
+                } catch (err) {
+                    console.error('Erro ao gerar Excel:', err);
+                    mostrarToast('Erro ao gerar Excel. Tente novamente.', 'error');
+                } finally {
+                    btnGerarExcelHistorico.disabled = false;
+                    btnGerarExcelHistorico.innerHTML = originalText;
+                }
+            }
+
             function alternarAba(tabId) {
                 if (!isAdmin() && (tabId === 'registro' || tabId === 'usuarios')) {
                     mostrarToast('Acesso restrito a administradores.', 'error');
@@ -4757,6 +5239,9 @@
             btnGerarPDF.addEventListener('click', gerarPDFDashboard);
             if (btnGerarPDFHistorico) {
                 btnGerarPDFHistorico.addEventListener('click', gerarPDFHistorico);
+            }
+            if (btnGerarExcelHistorico) {
+                btnGerarExcelHistorico.addEventListener('click', gerarExcelHistorico);
             }
 
             codItemInput.addEventListener('input', function() {
