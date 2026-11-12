@@ -2741,8 +2741,12 @@
                 'Aguardando financeiro':                        { badge: 'badge-financeiro',    icon: '💰' },
                 'Aguardando qualidade':                         { badge: 'badge-qualidade',     icon: '🔍' },
                 'Aguardando nota de devolução':                 { badge: 'badge-aguardando',    icon: '⏳' },
+                'Aguardando devolutiva da logistica':           { badge: 'badge-aguardando',    icon: '🚚' },
+                'Aguardando devolutiva do cliente / representante': { badge: 'badge-aguardando',    icon: '👥' },
+                'Aguardando retificar nota de devolução':       { badge: 'badge-aguardando',    icon: '📝' },
                 'Cliente contabilizando':                       { badge: 'badge-contabilizando',icon: '📊' },
                 'Enviar reposição':                             { badge: 'badge-reposicao',     icon: '📦' },
+                'Aguardando envio de reposição':                { badge: 'badge-reposicao',     icon: '📦' },
                 'Concluído':                                    { badge: 'badge-concluido',     icon: '✅' }
             };
 
@@ -2879,8 +2883,11 @@
                     { valor: 'Aguardando financeiro', texto: '💰 Aguardando financeiro' },
                     { valor: 'Aguardando qualidade', texto: '🔍 Aguardando qualidade' },
                     { valor: 'Aguardando nota de devolução', texto: '⏳ Aguardando nota de devolução' },
+                    { valor: 'Aguardando devolutiva da logistica', texto: '🚚 Aguardando devolutiva da logistica' },
+                    { valor: 'Aguardando devolutiva do cliente / representante', texto: '👥 Aguardando devolutiva do cliente / representante' },
+                    { valor: 'Aguardando retificar nota de devolução', texto: '📝 Aguardando retificar nota de devolução' },
                     { valor: 'Cliente contabilizando', texto: '📊 Cliente contabilizando' },
-                    { valor: 'Enviar reposição', texto: '📦 Enviar reposição' },
+                    { valor: 'Aguardando envio de reposição', texto: '📦 Aguardando envio de reposição' },
                     { valor: 'Concluído', texto: '✅ Concluído' }
                 ];
                 const valorSelecionado = (modoEdicao && andamentoAtual) ? andamentoAtual : 'Abertura da RNC';
